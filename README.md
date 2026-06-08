@@ -87,6 +87,19 @@ http://127.0.0.1:8000/docs
 
 - Solve a question image by POSTing a file to `/solve` with `mode=ocr`.
 
+## Streamlit Demo UI
+
+A simple local UI is available for uploading a question image and running the OCR + Mock LLM pipeline directly.
+
+- Run the Streamlit UI:
+
+```bash
+streamlit run ui/streamlit_app.py
+```
+
+- The UI currently uses OCR + Mock LLM mode.
+- Uploaded files are stored temporarily under `uploads/streamlit/` and are ignored by git.
+
 ## Setup
 
 1. Clone the repository.
