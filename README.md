@@ -2,198 +2,264 @@
 
 ## Project Purpose
 
-This repository contains a clean Python project skeleton for evaluating two approaches to solving question images:
+This project compares two approaches for solving question images:
 
-1. OCR + LLM: use optical character recognition to extract the question text, then solve it with a language model.
-2. Direct Vision LLM: send the question image directly to a multimodal language model.
+- **OCR + Text LLM**: extract text from the image first, then solve the extracted question with a text language model.
+- **Direct Vision / Multimodal LLM**: send the image directly to a vision-capable language model.
 
-## Problem Definition
+The project also includes **Both / Compare** mode, which runs both pipelines and recommends the more reliable result based on answer quality and confidence.
 
-The project is designed to compare the performance of text-first and image-first pipelines when solving questions from images. The evaluation will measure how accurately each method interprets the question and arrives at a correct answer.
+## Why This Project Exists
+
+Question images are not always plain text. They may include mathematical expressions, tables, charts, geometry diagrams, noisy scans, or mixed visual reasoning.
+
+OCR can be enough for text-heavy questions, especially when the scan is clear. Vision models may be better for graph, geometry, chart, or image-heavy questions where important information is visual rather than textual. This project provides a small but practical framework for comparing those approaches.
 
 ## Compared Pipelines
 
-- **OCR + LLM**: extract text from an image using OCR, then feed the text to an LLM for reasoning and answer generation.
-- **Direct Vision LLM**: provide the image directly to a vision-capable LLM and let the model solve the problem without intermediate text extraction.
+1. **OCR + LLM**
+   - Preprocess the image with OpenCV.
+   - Extract text with Tesseract OCR.
+   - Send the text to a mock or real text LLM.
 
-## Planned Architecture
+2. **Direct Vision LLM**
+   - Send the image directly to a mock or real multimodal LLM.
+   - Avoid relying on OCR text extraction.
 
-- `app/` for API entry points, configuration, and data schemas.
-- `services/` for reusable modules covering preprocessing, OCR, LLM interaction, Langflow integration, solver pipelines, and evaluation.
-- `ui/` for a Streamlit-based dashboard.
-- `data/` for sample questions and ground truth annotations.
-- `tests/` for unit tests.
-- `reports/` for technical documentation and analysis.
+3. **Both / Compare**
+   - Run OCR + LLM and Direct Vision LLM.
+   - Compare the results.
+   - Recommend OCR, Vision, agreement between both, or no reliable answer.
 
-## Tech Stack
+## Current Features
 
-- Python
-- FastAPI
-- Streamlit
-- Pydantic
-- python-dotenv
-- OpenCV
-- pytesseract
-- requests / httpx
-- pandas
-- pytest
-- litellm
+- FastAPI backend
+- Streamlit UI
+- OCR preprocessing with OpenCV
+- Tesseract OCR integration
+- Mock LLM mode by default
+- LiteLLM integration prepared for text and vision model calls
+- Langflow integration prepared and disabled by default
+- Sample smoke-test dataset
+- Advanced benchmark dataset
+- Batch evaluation workflow
+- Pytest test suite
 
-## OCR Pipeline
+## Project Architecture
 
-This repository includes a beginner-friendly OCR pipeline that:
+- `app/`: FastAPI app, configuration, and response schemas.
+- `services/`: OCR, image preprocessing, LLM calls, solver pipelines, evaluator, and Langflow client.
+- `ui/`: Streamlit interface for uploading images and choosing a pipeline.
+- `scripts/`: dataset generation and evaluation scripts.
+- `data/sample_questions/`: basic smoke-test question images.
+- `data/benchmark_questions/`: harder benchmark question images.
+- `tests/`: automated test suite.
+- `configs/`: example LiteLLM configuration.
+- `langflow/`: Langflow notes and integration material.
+- `reports/`: technical writeups and evaluation notes.
+- `screenshots/`: project screenshots.
+- `outputs/`: runtime evaluation results and debug outputs.
 
-- loads a question image from disk,
-- preprocesses it for cleaner OCR with OpenCV,
-- extracts text using `pytesseract` and English language support,
-- returns a structured result with `text`, `status`, `error`, and `debug_image_path`,
-- and saves a debug image when requested.
+`outputs/` is for runtime files. CSV results such as `outputs/results.csv` and `outputs/benchmark_results.csv` should not be committed, except for placeholder files such as `.gitkeep` if present.
 
-`pytesseract` is a Python wrapper for the Tesseract OCR engine. Tesseract must also be installed separately on your computer for OCR to work.
+## Datasets
 
-To create a sample question image:
+### Sample Dataset
 
-```bash
-python scripts/create_sample_questions.py
+Located at `data/sample_questions/`.
+
+Includes:
+
+- `q01_text.png`
+- `q02_math.png`
+- `q03_equation.png`
+- `q04_table.png`
+- `q05_chart.png`
+- `q06_geometry.png`
+- `q07_mixed.png`
+- `q08_noisy.png`
+
+Purpose: smoke testing and validating the pipeline in mock mode.
+
+### Benchmark Dataset
+
+Located at `data/benchmark_questions/`.
+
+Includes:
+
+- `q09_parabola_vertex.png`
+- `q10_derivative.png`
+- `q11_limit.png`
+- `q12_integral.png`
+- `q13_geometry_angle.png`
+- `q14_parabola_graph.png`
+- `q15_chart_reasoning.png`
+- `q16_mixed_math_visual.png`
+
+Purpose: more realistic and harder model evaluation with real API mode.
+
+## Setup
+
+Create and activate a virtual environment:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\activate
 ```
 
-To run the OCR service tests:
+Install dependencies:
 
-```bash
-python -m pytest tests/test_ocr_service.py
+```powershell
+pip install -r requirements.txt
 ```
 
-## FastAPI API
+Create a local environment file:
 
-The project exposes a simple API with a health endpoint and a solver endpoint.
+```powershell
+copy .env.example .env
+```
 
-- Run the API:
+Tesseract must be installed separately for OCR. `pytesseract` is only the Python wrapper; the Tesseract OCR engine must also be available on your machine.
 
-```bash
+## Running the API
+
+Start FastAPI:
+
+```powershell
 uvicorn app.main:app --reload
 ```
 
-- Health endpoint:
+Useful endpoints:
 
-```text
-http://127.0.0.1:8000/health
-```
+- `http://127.0.0.1:8000/health`
+- `http://127.0.0.1:8000/docs`
 
-- Interactive docs:
+The `/solve` endpoint accepts an uploaded image and supports:
 
-```text
-http://127.0.0.1:8000/docs
-```
+- `mode=ocr`
+- `mode=vision`
+- `mode=both`
 
-- Solve a question image by POSTing a file to `/solve` with `mode=ocr`.
+## Running the Streamlit UI
 
-## Streamlit Demo UI
+Start the local UI:
 
-A simple local UI is available for uploading a question image and running the OCR + Mock LLM pipeline directly.
-
-- Run the Streamlit UI:
-
-```bash
+```powershell
 streamlit run ui/streamlit_app.py
 ```
 
-- The UI currently uses OCR + Mock LLM mode.
-- Uploaded files are stored temporarily under `uploads/streamlit/` and are ignored by git.
+The UI lets you upload a question image and choose one of:
 
-## Evaluation Workflow
+- OCR + LLM
+- Direct Vision LLM
+- Both / Compare
 
-This project includes a batch evaluation workflow that compares predicted answers against ground truth.
+## Generating Question Images
 
-- Run evaluation:
+Generate the sample smoke-test dataset:
 
-```bash
-python scripts/run_evaluation.py
+```powershell
+python scripts/create_sample_questions.py
 ```
 
-- Results are saved to `outputs/results.csv`.
-- Since this is mock mode evaluation, it validates the infrastructure and not real model accuracy.
-- `outputs/` is ignored by git.
+Generate the advanced benchmark dataset:
 
-## Langflow Integration
-
-This project includes optional Langflow integration for solving questions through Langflow flows.
-
-**By default, Langflow is disabled.** The project runs perfectly well without it using mock LLM mode.
-
-### Enabling Langflow
-
-To enable Langflow integration in the future:
-
-1. Set `USE_LANGFLOW=true` in your `.env` file
-2. Provide the required configuration:
-   - `LANGFLOW_URL`: The URL to your Langflow server (e.g., `http://localhost:7860`)
-   - `LANGFLOW_FLOW_ID`: The ID of the Langflow flow to use
-   - `LANGFLOW_API_KEY` (optional): API key for authentication if required
-
-Example `.env` configuration:
-
+```powershell
+python scripts/create_benchmark_questions.py
 ```
+
+## Running Evaluation
+
+Evaluate the sample dataset:
+
+```powershell
+python scripts/run_evaluation.py --dataset sample
+```
+
+Evaluate the benchmark dataset:
+
+```powershell
+python scripts/run_evaluation.py --dataset benchmark
+```
+
+Evaluate both datasets:
+
+```powershell
+python scripts/run_evaluation.py --dataset all
+```
+
+The sample dataset is expected to perform well in mock mode. The benchmark dataset is intended for real model testing, so mock-mode accuracy may be low by design.
+
+Runtime CSV outputs are saved under `outputs/` and ignored by git.
+
+## Running Tests
+
+Run the full test suite:
+
+```powershell
+python -m pytest -q
+```
+
+Latest known result:
+
+```text
+62 passed, 1 warning
+```
+
+## Mock Mode vs Real API Mode
+
+Mock mode is the default. It is safe, does not require API keys, and validates the infrastructure without API costs.
+
+Real API mode requires local `.env` configuration. Never commit real API keys.
+
+Example `.env`:
+
+```env
+LLM_MOCK_MODE=true
+LLM_MODEL_NAME=
+LLM_API_KEY=
+LLM_API_BASE=
+LITELLM_PROXY_URL=
 USE_LANGFLOW=false
 LANGFLOW_URL=
 LANGFLOW_API_KEY=
 LANGFLOW_FLOW_ID=
 ```
 
-### How It Works
-
-- The Langflow client checks if it's configured before making any requests.
-- If Langflow is not configured, it returns a safe error response without crashing.
-- The client sends the extracted question text to a Langflow flow and expects a response with `answer`, `explanation`, and `confidence`.
-- All errors are caught and returned gracefully without exposing stack traces.
-
-### Future Pipeline
-
-The planned OCR + Langflow pipeline will work as follows:
-
-1. Load question image
-2. Extract text using OCR
-3. Send extracted text to a Langflow text solver flow
-4. Receive answer, explanation, and confidence
-
-This allows you to build complex reasoning flows in Langflow while keeping the Python code simple.
-
 ## LiteLLM Integration
 
-This project uses **mock mode by default** and does not incur API costs.
+LiteLLM support is prepared for real text and vision model calls. In real API mode, the project can call LiteLLM-compatible providers using the configured model name, API key, base URL, or LiteLLM proxy URL.
 
-To enable real LLM solving later, set `LLM_MOCK_MODE=false` in your `.env` file and provide:
-- `LLM_MODEL_NAME`: e.g., `openai/gpt-3.5-turbo`, `anthropic/claude-3-sonnet`
-- `LLM_API_KEY`: Your LLM provider API key
-- `LLM_API_BASE` (optional): Custom API endpoint
-- `LITELLM_PROXY_URL` (optional): LiteLLM proxy server URL
+Mock mode remains the recommended default for local setup, tests, and GitHub-safe demos.
 
-**Important:** Never commit real API keys. Always use `.env` and environment variables.
+## Langflow Integration
 
-A LiteLLM config example is available in `configs/litellm_config.example.yaml`.
+The Langflow client is prepared and disabled by default. It can be enabled later with `.env` settings such as `USE_LANGFLOW=true`, `LANGFLOW_URL`, `LANGFLOW_API_KEY`, and `LANGFLOW_FLOW_ID`.
 
-## Setup
-
-1. Clone the repository.
-2. Create a Python virtual environment.
-3. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-4. Copy `.env.example` to `.env` and fill in any required environment variables.
-5. Run the API:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-6. Run the Streamlit UI:
-
-```bash
-streamlit run ui/streamlit_app.py
-```
+This allows future experiments with visual pipeline orchestration while keeping the core Python application usable without Langflow.
 
 ## Current Status
 
-This project is currently a skeleton implementation ready for future development. It includes a FastAPI health endpoint, configuration support, service placeholders, a Streamlit scaffold, tests, and documentation.
+- OCR pipeline works.
+- Mock LLM mode works.
+- Vision mock mode works.
+- Both / Compare mode works.
+- Sample evaluation works in mock mode.
+- Benchmark evaluation is ready for real API testing.
+- Real model API testing is the next major step.
+
+## Limitations
+
+- Mock mode does not represent real model intelligence.
+- OCR quality depends on Tesseract installation, scan quality, and preprocessing.
+- Benchmark accuracy must be measured with real multimodal and text models.
+- Generated images are controlled demo samples, not a full educational dataset.
+
+## Future Work
+
+- Real LiteLLM API testing
+- Real vision model comparison
+- Langflow flow connection
+- Richer benchmark set
+- Latency and cost comparison
+- Report updates and screenshots
