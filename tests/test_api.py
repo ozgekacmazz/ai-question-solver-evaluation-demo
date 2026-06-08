@@ -3,6 +3,7 @@ from io import BytesIO
 from fastapi.testclient import TestClient
 from PIL import Image
 
+from app.config import settings
 from app.main import app
 
 client = TestClient(app)
@@ -67,7 +68,8 @@ def test_solve_endpoint_returns_expected_keys(monkeypatch) -> None:
         assert key in data
 
 
-def test_solve_endpoint_unsupported_mode_returns_error() -> None:
+def test_solve_endpoint_accepts_vision_mode_in_mock_mode(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
     image = Image.new("RGB", (640, 240), color="white")
     buffer = BytesIO()
     image.save(buffer, format="PNG")
@@ -79,5 +81,42 @@ def test_solve_endpoint_unsupported_mode_returns_error() -> None:
         data={"mode": "vision"},
     )
 
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+
+
+def test_solve_endpoint_accepts_both_mode_in_mock_mode(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+    image = Image.new("RGB", (640, 240), color="white")
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    response = client.post(
+        "/solve",
+        files={"image": ("question.png", buffer, "image/png")},
+        data={"mode": "both"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert data["pipeline"] == "both"
+    assert data["recommended_pipeline"] in {"vision_llm", "ocr_llm", "both_agree"}
+    assert data["comparison_summary"]
+
+
+def test_solve_endpoint_unsupported_mode_returns_error() -> None:
+    image = Image.new("RGB", (640, 240), color="white")
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    response = client.post(
+        "/solve",
+        files={"image": ("question.png", buffer, "image/png")},
+        data={"mode": "invalid"},
+    )
+
     assert response.status_code == 400
-    assert response.json()["detail"] == "Only mode=ocr is supported for now."
+    assert "Supported modes are: ocr, vision, both" in response.json()["detail"]

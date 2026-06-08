@@ -31,11 +31,22 @@ def test_unknown_mock_question_returns_safe_result(monkeypatch) -> None:
     assert result["error"] is None
 
 
-def test_solve_image_question_returns_not_implemented() -> None:
+def test_solve_image_question_missing_image_fails_safely() -> None:
     result = solve_image_question("dummy_path.png")
 
     assert result["status"] == "failed"
-    assert "not implemented" in result["error"].lower()
+    assert "not found" in result["error"].lower()
+    assert result["latency_ms"] >= 0
+
+
+def test_mock_vision_two_plus_two_sample_returns_B(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+    result = solve_image_question("data/sample_questions/q01_text.png")
+
+    assert result["status"] == "success"
+    assert result["answer"] == "B"
+    assert result["confidence"] == 0.90
+    assert result["error"] is None
 
 
 def test_llm_service_result_keys(monkeypatch) -> None:
