@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-dotenv
+pydantic
+requests
+httpx
+opencv-python
+pytesseract
+pillow
+pandas
+pytest
+streamlit
+litellm
