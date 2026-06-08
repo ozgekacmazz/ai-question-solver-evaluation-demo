@@ -2,7 +2,9 @@ from pathlib import Path
 
 import pandas as pd
 
+from scripts.create_benchmark_questions import create_all_benchmark_questions
 from scripts.create_sample_questions import create_all_sample_questions
+from scripts.run_evaluation import get_dataset_configs, run_evaluation
 from services.evaluator import (
     evaluate_answer,
     load_ground_truth,
@@ -69,6 +71,35 @@ def test_sample_question_generation_and_ground_truth_paths() -> None:
         assert Path(record["image_path"]).exists()
 
 
+def test_benchmark_question_generation_and_ground_truth_paths() -> None:
+    created_paths = create_all_benchmark_questions(Path("data/benchmark_questions"))
+    records = load_ground_truth("data/benchmark_ground_truth.json")
+
+    expected_ids = {f"q{index:02d}" for index in range(9, 17)}
+    expected_files = {
+        "q09_parabola_vertex.png",
+        "q10_derivative.png",
+        "q11_limit.png",
+        "q12_integral.png",
+        "q13_geometry_angle.png",
+        "q14_parabola_graph.png",
+        "q15_chart_reasoning.png",
+        "q16_mixed_math_visual.png",
+    }
+
+    assert {path.name for path in created_paths} == expected_files
+    assert len(created_paths) == 8
+    assert {record["id"] for record in records} == expected_ids
+    assert len(records) == 8
+
+    for path in created_paths:
+        assert path.exists()
+
+    for record in records:
+        assert Path(record["image_path"]).exists()
+        assert record["difficulty"] == "advanced"
+
+
 def test_run_batch_evaluation_creates_csv(tmp_path: Path, monkeypatch) -> None:
     output_csv = tmp_path / "results.csv"
 
@@ -114,3 +145,31 @@ def test_run_batch_evaluation_can_run_dataset_in_both_mode(tmp_path: Path) -> No
     assert len(results) == 8
     assert all("recommended_pipeline" in item for item in results)
     assert all("vision_answer" in item for item in results)
+
+
+def test_run_evaluation_dataset_configs_load_sample_and_benchmark() -> None:
+    sample_config = get_dataset_configs("sample")
+    benchmark_config = get_dataset_configs("benchmark")
+
+    assert sample_config[0]["ground_truth_path"] == "data/ground_truth.json"
+    assert benchmark_config[0]["ground_truth_path"] == "data/benchmark_ground_truth.json"
+    assert len(load_ground_truth(sample_config[0]["ground_truth_path"])) == 8
+    assert len(load_ground_truth(benchmark_config[0]["ground_truth_path"])) == 8
+
+
+def test_benchmark_evaluation_runs_without_api_keys(tmp_path: Path, monkeypatch) -> None:
+    create_all_benchmark_questions(Path("data/benchmark_questions"))
+
+    import scripts.run_evaluation as run_evaluation_module
+
+    monkeypatch.setattr(
+        run_evaluation_module,
+        "get_output_csv_path",
+        lambda dataset: str(tmp_path / f"{dataset}_results.csv"),
+    )
+
+    results, output_csv_path = run_evaluation(dataset="benchmark", mode="both")
+
+    assert Path(output_csv_path).exists()
+    assert len(results) == 8
+    assert all("recommended_pipeline" in item for item in results)

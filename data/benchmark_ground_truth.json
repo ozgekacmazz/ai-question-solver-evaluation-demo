@@ -1,0 +1,74 @@
+[
+  {
+    "id": "q09",
+    "image_path": "data/benchmark_questions/q09_parabola_vertex.png",
+    "question_type": "algebra",
+    "difficulty": "advanced",
+    "correct_answer": "B",
+    "expected_reasoning": "For f(x) = x^2 - 4x + 3, the vertex x-coordinate is -b / 2a = 2. Then f(2) = -1, so the vertex is (2, -1).",
+    "notes": "Quadratic vertex formula question."
+  },
+  {
+    "id": "q10",
+    "image_path": "data/benchmark_questions/q10_derivative.png",
+    "question_type": "calculus",
+    "difficulty": "advanced",
+    "correct_answer": "B",
+    "expected_reasoning": "The derivative is f'(x) = 6x - 5. Substituting x = 2 gives 12 - 5 = 7.",
+    "notes": "Symbolic derivative and substitution."
+  },
+  {
+    "id": "q11",
+    "image_path": "data/benchmark_questions/q11_limit.png",
+    "question_type": "calculus",
+    "difficulty": "advanced",
+    "correct_answer": "B",
+    "expected_reasoning": "(x^2 - 4) factors to (x - 2)(x + 2). Canceling x - 2 leaves x + 2, which equals 4 at x = 2.",
+    "notes": "Limit with removable discontinuity."
+  },
+  {
+    "id": "q12",
+    "image_path": "data/benchmark_questions/q12_integral.png",
+    "question_type": "calculus",
+    "difficulty": "advanced",
+    "correct_answer": "B",
+    "expected_reasoning": "The antiderivative of 2x is x^2, and indefinite integrals include + C.",
+    "notes": "Basic indefinite integration."
+  },
+  {
+    "id": "q13",
+    "image_path": "data/benchmark_questions/q13_geometry_angle.png",
+    "question_type": "geometry",
+    "difficulty": "advanced",
+    "correct_answer": "B",
+    "expected_reasoning": "Triangle angles sum to 180 degrees. 180 - 50 - 60 = 70 degrees.",
+    "notes": "Triangle angle-sum reasoning with a visual."
+  },
+  {
+    "id": "q14",
+    "image_path": "data/benchmark_questions/q14_parabola_graph.png",
+    "question_type": "graph",
+    "difficulty": "advanced",
+    "correct_answer": "B",
+    "expected_reasoning": "The drawn parabola crosses the x-axis near x = 1 and x = 3.",
+    "notes": "Graph interpretation rather than purely text reading."
+  },
+  {
+    "id": "q15",
+    "image_path": "data/benchmark_questions/q15_chart_reasoning.png",
+    "question_type": "chart",
+    "difficulty": "advanced",
+    "correct_answer": "B",
+    "expected_reasoning": "The chart shows Math with score 80, higher than Physics at 65 and Chemistry at 75.",
+    "notes": "Bar chart comparison."
+  },
+  {
+    "id": "q16",
+    "image_path": "data/benchmark_questions/q16_mixed_math_visual.png",
+    "question_type": "mixed",
+    "difficulty": "advanced",
+    "correct_answer": "B",
+    "expected_reasoning": "The rectangle area is width times height. With area 40 and height 5, x = 40 / 5 = 8.",
+    "notes": "Visual geometry plus algebraic reasoning."
+  }
+]

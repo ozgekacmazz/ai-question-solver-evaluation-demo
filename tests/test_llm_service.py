@@ -1,5 +1,6 @@
 from app.config import settings
 
+from scripts.create_benchmark_questions import create_all_benchmark_questions
 from scripts.create_sample_questions import create_all_sample_questions
 from services.llm_service import solve_image_question, solve_text_question
 
@@ -71,6 +72,18 @@ def test_mock_vision_returns_B_for_all_known_samples(monkeypatch) -> None:
         assert result["answer"] == "B"
         assert result["confidence"] == confidence
         assert result["error"] is None
+
+
+def test_mock_vision_does_not_hardcode_benchmark_answers(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+    create_all_benchmark_questions()
+
+    result = solve_image_question("data/benchmark_questions/q09_parabola_vertex.png")
+
+    assert result["status"] == "success"
+    assert result["answer"] == "unknown"
+    assert result["confidence"] == 0.0
+    assert "real model evaluation" in result["explanation"]
 
 
 def test_mock_text_rules_return_B_for_known_patterns(monkeypatch) -> None:

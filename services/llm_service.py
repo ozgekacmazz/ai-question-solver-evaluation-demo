@@ -235,6 +235,26 @@ def _mock_solve_image(image_path: str) -> Dict[str, Any]:
         if sample_name.removesuffix(".png") in image_name:
             return _mock_vision_success(explanation, confidence)
 
+    benchmark_tokens = [
+        "parabola",
+        "derivative",
+        "limit",
+        "integral",
+        "angle",
+        "graph",
+        "reasoning",
+        "mixed_math_visual",
+    ]
+    if image_name.startswith("q") and any(token in image_name for token in benchmark_tokens):
+        return {
+            "answer": "unknown",
+            "explanation": "Benchmark questions require real model evaluation. Mock mode does not solve this advanced question.",
+            "confidence": 0.0,
+            "raw_response": "",
+            "status": "success",
+            "error": None,
+        }
+
     return {
         "answer": "unknown",
         "explanation": "Mock vision mode cannot solve this image reliably.",
