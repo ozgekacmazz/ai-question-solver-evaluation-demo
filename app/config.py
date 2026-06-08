@@ -20,7 +20,10 @@ class Settings:
         self.llm_api_base: str | None = os.getenv("LLM_API_BASE")
         self.litellm_proxy_url: str | None = os.getenv("LITELLM_PROXY_URL")
         self.ocr_api_key: str | None = os.getenv("OCR_API_KEY")
+        self.use_langflow: bool = os.getenv("USE_LANGFLOW", "false").strip().lower() in ("true", "1", "yes")
         self.langflow_url: str | None = os.getenv("LANGFLOW_URL")
+        self.langflow_api_key: str | None = os.getenv("LANGFLOW_API_KEY")
+        self.langflow_flow_id: str | None = os.getenv("LANGFLOW_FLOW_ID")
 
 
 settings = Settings()

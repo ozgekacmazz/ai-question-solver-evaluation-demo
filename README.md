@@ -114,6 +114,49 @@ python scripts/run_evaluation.py
 - Since this is mock mode evaluation, it validates the infrastructure and not real model accuracy.
 - `outputs/` is ignored by git.
 
+## Langflow Integration
+
+This project includes optional Langflow integration for solving questions through Langflow flows.
+
+**By default, Langflow is disabled.** The project runs perfectly well without it using mock LLM mode.
+
+### Enabling Langflow
+
+To enable Langflow integration in the future:
+
+1. Set `USE_LANGFLOW=true` in your `.env` file
+2. Provide the required configuration:
+   - `LANGFLOW_URL`: The URL to your Langflow server (e.g., `http://localhost:7860`)
+   - `LANGFLOW_FLOW_ID`: The ID of the Langflow flow to use
+   - `LANGFLOW_API_KEY` (optional): API key for authentication if required
+
+Example `.env` configuration:
+
+```
+USE_LANGFLOW=false
+LANGFLOW_URL=
+LANGFLOW_API_KEY=
+LANGFLOW_FLOW_ID=
+```
+
+### How It Works
+
+- The Langflow client checks if it's configured before making any requests.
+- If Langflow is not configured, it returns a safe error response without crashing.
+- The client sends the extracted question text to a Langflow flow and expects a response with `answer`, `explanation`, and `confidence`.
+- All errors are caught and returned gracefully without exposing stack traces.
+
+### Future Pipeline
+
+The planned OCR + Langflow pipeline will work as follows:
+
+1. Load question image
+2. Extract text using OCR
+3. Send extracted text to a Langflow text solver flow
+4. Receive answer, explanation, and confidence
+
+This allows you to build complex reasoning flows in Langflow while keeping the Python code simple.
+
 ## LiteLLM Integration
 
 This project uses **mock mode by default** and does not incur API costs.
