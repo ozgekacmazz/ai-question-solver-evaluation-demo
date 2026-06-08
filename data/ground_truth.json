@@ -1,1 +1,8 @@
-{}
+[
+  {
+    "id": "q01",
+    "image_path": "data/sample_questions/q01_text.png",
+    "question_type": "text",
+    "correct_answer": "B"
+  }
+]

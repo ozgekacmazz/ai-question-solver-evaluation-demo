@@ -100,6 +100,20 @@ streamlit run ui/streamlit_app.py
 - The UI currently uses OCR + Mock LLM mode.
 - Uploaded files are stored temporarily under `uploads/streamlit/` and are ignored by git.
 
+## Evaluation Workflow
+
+This project includes a batch evaluation workflow that compares predicted answers against ground truth.
+
+- Run evaluation:
+
+```bash
+python scripts/run_evaluation.py
+```
+
+- Results are saved to `outputs/results.csv`.
+- Since this is mock mode evaluation, it validates the infrastructure and not real model accuracy.
+- `outputs/` is ignored by git.
+
 ## Setup
 
 1. Clone the repository.
