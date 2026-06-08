@@ -99,6 +99,76 @@ def test_solve_question_image_both_mode_returns_recommendation(monkeypatch) -> N
     assert result["answer"] == "B"
 
 
+def test_both_mode_does_not_recommend_agreement_when_both_unknown(monkeypatch) -> None:
+    def mock_unknown_pipeline(pipeline: str):
+        def _mock(image_path: str) -> dict:
+            return {
+                "pipeline": pipeline,
+                "image_path": image_path,
+                "ocr_result": {},
+                "llm_result": {"status": "success"},
+                "answer": "unknown",
+                "solution": "unknown",
+                "explanation": "Unknown.",
+                "confidence": 0.0,
+                "status": "success",
+                "error": None,
+            }
+
+        return _mock
+
+    monkeypatch.setattr("services.solver_pipeline.run_ocr_llm_pipeline", mock_unknown_pipeline("ocr_llm"))
+    monkeypatch.setattr("services.solver_pipeline.run_vision_llm_pipeline", mock_unknown_pipeline("vision_llm"))
+
+    result = solve_question_image("question.png", mode="both")
+
+    assert result["recommended_pipeline"] == "none"
+    assert result["recommended_pipeline"] != "both_agree"
+    assert result["answer"] == "unknown"
+    assert result["confidence"] == 0.0
+    assert result["status"] == "success_with_no_reliable_answer"
+    assert result["comparison_summary"] == "Neither pipeline produced a reliable answer."
+
+
+def test_both_mode_recommends_vision_when_ocr_unknown(monkeypatch) -> None:
+    def mock_run_ocr_llm_pipeline(image_path: str) -> dict:
+        return {
+            "pipeline": "ocr_llm",
+            "image_path": image_path,
+            "ocr_result": {"text": "", "status": "failed"},
+            "llm_result": {"status": "success"},
+            "answer": "unknown",
+            "solution": "unknown",
+            "explanation": "Unknown.",
+            "confidence": 0.0,
+            "status": "success",
+            "error": None,
+        }
+
+    def mock_run_vision_llm_pipeline(image_path: str) -> dict:
+        return {
+            "pipeline": "vision_llm",
+            "image_path": image_path,
+            "ocr_result": {},
+            "llm_result": {"status": "success"},
+            "answer": "B",
+            "solution": "B",
+            "explanation": "Vision selected B.",
+            "confidence": 0.92,
+            "status": "success",
+            "error": None,
+        }
+
+    monkeypatch.setattr("services.solver_pipeline.run_ocr_llm_pipeline", mock_run_ocr_llm_pipeline)
+    monkeypatch.setattr("services.solver_pipeline.run_vision_llm_pipeline", mock_run_vision_llm_pipeline)
+
+    result = solve_question_image("question.png", mode="both")
+
+    assert result["recommended_pipeline"] == "vision_llm"
+    assert result["answer"] == "B"
+    assert result["confidence"] == 0.92
+
+
 def test_solve_question_image_unsupported_mode_returns_failed_status() -> None:
     result = solve_question_image("question.png", mode="invalid")
 

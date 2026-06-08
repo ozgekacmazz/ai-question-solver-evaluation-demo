@@ -53,6 +53,6 @@ def solve_question(
     except Exception:
         raise HTTPException(status_code=500, detail="Failed to process the uploaded image.")
 
-    if result.get("status") != "success" and result.get("error"):
+    if result.get("status") == "failed" and result.get("error"):
         return JSONResponse(status_code=400, content=result)
     return result

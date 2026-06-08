@@ -17,6 +17,10 @@ def _is_simple_two_plus_two(question_text: str) -> bool:
     return "2 + 2" in normalized and "what" in normalized
 
 
+def _normalize_mock_text(question_text: str) -> str:
+    return " ".join(question_text.lower().replace("\n", " ").split())
+
+
 def _build_messages(question_text: str) -> list[dict[str, str]]:
     """Build messages for the LLM completion API."""
     return [
@@ -117,16 +121,52 @@ def parse_llm_response(raw_response: str) -> Dict[str, Any]:
 
 
 def _mock_solve(question_text: str) -> Dict[str, Any]:
-    if _is_simple_two_plus_two(question_text):
-        raw_response = "Answer: B\nExplanation: 2 + 2 equals 4, so the correct option is B."
-        return {
-            "answer": "B",
-            "explanation": "2 + 2 equals 4, so the correct option is B.",
-            "confidence": 0.95,
-            "raw_response": raw_response,
-            "status": "success",
-            "error": None,
-        }
+    normalized = _normalize_mock_text(question_text)
+    compact = normalized.replace(" ", "")
+    rules = [
+        (
+            _is_simple_two_plus_two(question_text),
+            "2 + 2 equals 4, so the correct option is B.",
+            0.95,
+        ),
+        (
+            "12/3+2" in compact,
+            "12 / 3 + 2 equals 6, so the correct option is B.",
+            0.92,
+        ),
+        (
+            "2x+3=11" in compact,
+            "Solving 2x + 3 = 11 gives x = 4, so the correct option is B.",
+            0.92,
+        ),
+        (
+            "notebook" in normalized and "20" in normalized and "cost" in normalized,
+            "The text indicates that Notebook costs 20, so the correct option is B.",
+            0.90,
+        ),
+        (
+            "width" in normalized and "4" in normalized and "height" in normalized and "3" in normalized,
+            "A rectangle with width 4 and height 3 has area 12, so the correct option is B.",
+            0.90,
+        ),
+        (
+            "4 stars" in normalized and "2" in normalized and ("total" in normalized or "more" in normalized),
+            "4 stars plus 2 more stars gives 6 total, so the correct option is B.",
+            0.90,
+        ),
+    ]
+
+    for matched, explanation, confidence in rules:
+        if matched:
+            raw_response = f"Answer: B\nExplanation: {explanation}\nConfidence: {confidence:.2f}"
+            return {
+                "answer": "B",
+                "explanation": explanation,
+                "confidence": confidence,
+                "raw_response": raw_response,
+                "status": "success",
+                "error": None,
+            }
 
     return {
         "answer": "unknown",
@@ -138,22 +178,62 @@ def _mock_solve(question_text: str) -> Dict[str, Any]:
     }
 
 
+def _mock_vision_success(explanation: str, confidence: float) -> Dict[str, Any]:
+    raw_response = f"Answer: B\nExplanation: {explanation}\nConfidence: {confidence:.2f}"
+    return {
+        "answer": "B",
+        "explanation": explanation,
+        "confidence": confidence,
+        "raw_response": raw_response,
+        "status": "success",
+        "error": None,
+    }
+
+
 def _mock_solve_image(image_path: str) -> Dict[str, Any]:
     image_name = Path(image_path).name.lower()
-    if image_name == "q01_text.png" or "q01_text" in image_name:
-        raw_response = (
-            "Answer: B\n"
-            "Explanation: Mock vision mode identified the simple 2 + 2 question and selected option B.\n"
-            "Confidence: 0.90"
-        )
-        return {
-            "answer": "B",
-            "explanation": "Mock vision mode identified the simple 2 + 2 question and selected option B.",
-            "confidence": 0.90,
-            "raw_response": raw_response,
-            "status": "success",
-            "error": None,
-        }
+    known_samples = {
+        "q01_text.png": (
+            "Mock vision mode identified the simple 2 + 2 question and selected option B.",
+            0.90,
+        ),
+        "q02_math.png": (
+            "Mock vision mode solved 12 / 3 + 2 = 6 and selected option B.",
+            0.90,
+        ),
+        "q03_equation.png": (
+            "Mock vision mode solved 2x + 3 = 11, so x = 4, and selected option B.",
+            0.91,
+        ),
+        "q04_table.png": (
+            "Mock vision mode read the table and identified that Notebook costs 20, so the correct option is B.",
+            0.92,
+        ),
+        "q05_chart.png": (
+            "Mock vision mode interpreted the chart and identified Bananas as the highest value, so the correct option is B.",
+            0.92,
+        ),
+        "q06_geometry.png": (
+            "Mock vision mode calculated the rectangle area as 4 x 3 = 12, so the correct option is B.",
+            0.93,
+        ),
+        "q07_mixed.png": (
+            "Mock vision mode counted 4 stars plus 2 stars, giving 6 in total, so the correct option is B.",
+            0.90,
+        ),
+        "q08_noisy.png": (
+            "Mock vision mode handled the noisy image and identified the 2 + 2 question, so the correct option is B.",
+            0.88,
+        ),
+    }
+
+    if image_name in known_samples:
+        explanation, confidence = known_samples[image_name]
+        return _mock_vision_success(explanation, confidence)
+
+    for sample_name, (explanation, confidence) in known_samples.items():
+        if sample_name.removesuffix(".png") in image_name:
+            return _mock_vision_success(explanation, confidence)
 
     return {
         "answer": "unknown",

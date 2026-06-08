@@ -9,11 +9,13 @@ from services.evaluator import run_batch_evaluation
 
 
 if __name__ == "__main__":
-    results = run_batch_evaluation()
+    mode = "both"
+    results = run_batch_evaluation(mode=mode)
     total = len(results)
     correct = sum(1 for item in results if item.get("is_correct"))
     accuracy = (correct / total * 100) if total else 0.0
 
+    print(f"Evaluation mode: {mode}")
     print(f"Evaluation complete: {total} questions")
     print(f"Correct: {correct}")
     print(f"Accuracy: {accuracy:.2f}%")

@@ -100,9 +100,9 @@ def test_solve_endpoint_accepts_both_mode_in_mock_mode(monkeypatch) -> None:
 
     assert response.status_code == 200
     data = response.json()
-    assert data["status"] == "success"
+    assert data["status"] in {"success", "success_with_no_reliable_answer"}
     assert data["pipeline"] == "both"
-    assert data["recommended_pipeline"] in {"vision_llm", "ocr_llm", "both_agree"}
+    assert data["recommended_pipeline"] in {"vision_llm", "ocr_llm", "both_agree", "none"}
     assert data["comparison_summary"]
 
 

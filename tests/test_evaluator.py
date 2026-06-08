@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from scripts.create_sample_questions import create_all_sample_questions
 from services.evaluator import (
     evaluate_answer,
     load_ground_truth,
@@ -40,14 +41,47 @@ def test_load_ground_truth_returns_list() -> None:
     assert records
 
 
+def test_sample_question_generation_and_ground_truth_paths() -> None:
+    created_paths = create_all_sample_questions(Path("data/sample_questions"))
+    records = load_ground_truth("data/ground_truth.json")
+
+    expected_ids = {f"q{index:02d}" for index in range(1, 9)}
+    expected_files = {
+        "q01_text.png",
+        "q02_math.png",
+        "q03_equation.png",
+        "q04_table.png",
+        "q05_chart.png",
+        "q06_geometry.png",
+        "q07_mixed.png",
+        "q08_noisy.png",
+    }
+
+    assert {path.name for path in created_paths} == expected_files
+    assert len(created_paths) == 8
+    assert {record["id"] for record in records} == expected_ids
+    assert len(records) == 8
+
+    for path in created_paths:
+        assert path.exists()
+
+    for record in records:
+        assert Path(record["image_path"]).exists()
+
+
 def test_run_batch_evaluation_creates_csv(tmp_path: Path, monkeypatch) -> None:
     output_csv = tmp_path / "results.csv"
 
     import services.evaluator as evaluator_module
 
     def mock_solve_question_image(image_path: str, mode: str = "ocr"):
+        assert mode == "both"
         return {
+            "pipeline": "both",
             "ocr_result": {"text": "What is 2 + 2?\nA) 3\nB) 4\nC) 5"},
+            "ocr_pipeline_result": {"answer": "B", "confidence": 0.95, "status": "success"},
+            "vision_pipeline_result": {"answer": "B", "confidence": 0.90, "status": "success"},
+            "recommended_pipeline": "both_agree",
             "answer": "B",
             "explanation": "2 + 2 equals 4, so the correct option is B.",
             "confidence": 0.95,
@@ -62,4 +96,21 @@ def test_run_batch_evaluation_creates_csv(tmp_path: Path, monkeypatch) -> None:
     assert output_csv.exists()
     df = pd.read_csv(output_csv)
     assert "question_id" in df.columns
+    assert "id" in df.columns
+    assert "recommended_pipeline" in df.columns
+    assert "ocr_answer" in df.columns
+    assert "vision_answer" in df.columns
+    assert "final_confidence" in df.columns
     assert len(results) == len(df)
+
+
+def test_run_batch_evaluation_can_run_dataset_in_both_mode(tmp_path: Path) -> None:
+    output_csv = tmp_path / "results.csv"
+    create_all_sample_questions(Path("data/sample_questions"))
+
+    results = run_batch_evaluation("data/ground_truth.json", str(output_csv), mode="both")
+
+    assert output_csv.exists()
+    assert len(results) == 8
+    assert all("recommended_pipeline" in item for item in results)
+    assert all("vision_answer" in item for item in results)

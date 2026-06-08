@@ -60,17 +60,25 @@ def evaluate_answer(predicted_answer: str, correct_answer: str) -> dict[str, Any
     }
 
 
-def evaluate_question(record: dict[str, Any]) -> dict[str, Any]:
-    """Evaluate a single question record against the OCR + LLM pipeline."""
+def _extract_pipeline_value(result: dict[str, Any], pipeline_key: str, value_key: str, default: Any = "") -> Any:
+    pipeline_result = result.get(pipeline_key, {})
+    if not isinstance(pipeline_result, dict):
+        return default
+    return pipeline_result.get(value_key, default)
+
+
+def evaluate_question(record: dict[str, Any], mode: str = "both") -> dict[str, Any]:
+    """Evaluate a single question record against the configured solve pipeline."""
     question_id = record.get("id", "")
     image_path = record.get("image_path", "")
     question_type = record.get("question_type", "")
     correct_answer = record.get("correct_answer", "")
 
     try:
-        result = solve_question_image(image_path, mode="ocr")
+        result = solve_question_image(image_path, mode=mode)
     except Exception as exc:
         return {
+            "id": question_id,
             "question_id": question_id,
             "image_path": image_path,
             "question_type": question_type,
@@ -78,6 +86,12 @@ def evaluate_question(record: dict[str, Any]) -> dict[str, Any]:
             "predicted_answer": "",
             "is_correct": False,
             "needs_manual_review": True,
+            "recommended_pipeline": "",
+            "ocr_answer": "",
+            "vision_answer": "",
+            "ocr_confidence": 0.0,
+            "vision_confidence": 0.0,
+            "final_confidence": 0.0,
             "status": "failed",
             "error": str(exc),
             "confidence": 0.0,
@@ -86,8 +100,12 @@ def evaluate_question(record: dict[str, Any]) -> dict[str, Any]:
 
     predicted_answer = result.get("answer", "")
     comparison = evaluate_answer(predicted_answer, correct_answer)
+    final_confidence = float(result.get("confidence", 0.0) or 0.0)
+    ocr_confidence = float(_extract_pipeline_value(result, "ocr_pipeline_result", "confidence", 0.0) or 0.0)
+    vision_confidence = float(_extract_pipeline_value(result, "vision_pipeline_result", "confidence", 0.0) or 0.0)
 
     return {
+        "id": question_id,
         "question_id": question_id,
         "image_path": image_path,
         "question_type": question_type,
@@ -95,9 +113,15 @@ def evaluate_question(record: dict[str, Any]) -> dict[str, Any]:
         "predicted_answer": predicted_answer,
         "is_correct": comparison["is_correct"],
         "needs_manual_review": comparison["needs_manual_review"],
+        "recommended_pipeline": result.get("recommended_pipeline", result.get("pipeline", "")),
+        "ocr_answer": _extract_pipeline_value(result, "ocr_pipeline_result", "answer", ""),
+        "vision_answer": _extract_pipeline_value(result, "vision_pipeline_result", "answer", ""),
+        "ocr_confidence": ocr_confidence,
+        "vision_confidence": vision_confidence,
+        "final_confidence": final_confidence,
         "status": result.get("status", "failed"),
         "error": result.get("error"),
-        "confidence": float(result.get("confidence", 0.0) or 0.0),
+        "confidence": final_confidence,
         "ocr_text": result.get("ocr_result", {}).get("text", ""),
     }
 
@@ -105,10 +129,11 @@ def evaluate_question(record: dict[str, Any]) -> dict[str, Any]:
 def run_batch_evaluation(
     ground_truth_path: str = "data/ground_truth.json",
     output_csv_path: str = "outputs/results.csv",
+    mode: str = "both",
 ) -> list[dict[str, Any]]:
     """Run batch evaluation over a ground truth dataset and save results."""
     records = load_ground_truth(ground_truth_path)
-    results = [evaluate_question(record) for record in records]
+    results = [evaluate_question(record, mode=mode) for record in records]
 
     output_file = Path(output_csv_path)
     output_file.parent.mkdir(parents=True, exist_ok=True)

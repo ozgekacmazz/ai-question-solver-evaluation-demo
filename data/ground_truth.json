@@ -3,6 +3,64 @@
     "id": "q01",
     "image_path": "data/sample_questions/q01_text.png",
     "question_type": "text",
-    "correct_answer": "B"
+    "correct_answer": "B",
+    "expected_reasoning": "2 + 2 equals 4, which matches option B.",
+    "notes": "Simple text-only smoke test."
+  },
+  {
+    "id": "q02",
+    "image_path": "data/sample_questions/q02_math.png",
+    "question_type": "math",
+    "correct_answer": "B",
+    "expected_reasoning": "12 / 3 equals 4, and 4 + 2 equals 6, which matches option B.",
+    "notes": "Basic arithmetic expression."
+  },
+  {
+    "id": "q03",
+    "image_path": "data/sample_questions/q03_equation.png",
+    "question_type": "equation",
+    "correct_answer": "B",
+    "expected_reasoning": "Subtracting 3 from both sides gives 2x = 8, so x = 4, which matches option B.",
+    "notes": "Simple linear equation."
+  },
+  {
+    "id": "q04",
+    "image_path": "data/sample_questions/q04_table.png",
+    "question_type": "table",
+    "correct_answer": "B",
+    "expected_reasoning": "The table lists Notebook with price 20, which matches option B.",
+    "notes": "Small table-reading question."
+  },
+  {
+    "id": "q05",
+    "image_path": "data/sample_questions/q05_chart.png",
+    "question_type": "chart",
+    "correct_answer": "B",
+    "expected_reasoning": "Bananas has 5 bars, more than Apples with 3 and Oranges with 2, which matches option B.",
+    "notes": "Simple bar-chart-like visual question."
+  },
+  {
+    "id": "q06",
+    "image_path": "data/sample_questions/q06_geometry.png",
+    "question_type": "geometry",
+    "correct_answer": "B",
+    "expected_reasoning": "A rectangle with width 4 and height 3 has area 4 * 3 = 12, which matches option B.",
+    "notes": "Geometry visual with labeled dimensions."
+  },
+  {
+    "id": "q07",
+    "image_path": "data/sample_questions/q07_mixed.png",
+    "question_type": "mixed",
+    "correct_answer": "B",
+    "expected_reasoning": "There are 4 stars plus 2 more stars, giving 6 total, which matches option B.",
+    "notes": "Text plus simple counting visual."
+  },
+  {
+    "id": "q08",
+    "image_path": "data/sample_questions/q08_noisy.png",
+    "question_type": "noisy_text",
+    "correct_answer": "B",
+    "expected_reasoning": "The degraded image asks the same 2 + 2 question as q01, so the answer is 4, option B.",
+    "notes": "Lower contrast, slight rotation, and mild noise for OCR robustness testing."
   }
 ]

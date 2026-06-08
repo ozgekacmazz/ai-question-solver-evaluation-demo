@@ -1,5 +1,6 @@
 from app.config import settings
 
+from scripts.create_sample_questions import create_all_sample_questions
 from services.llm_service import solve_image_question, solve_text_question
 
 
@@ -47,6 +48,47 @@ def test_mock_vision_two_plus_two_sample_returns_B(monkeypatch) -> None:
     assert result["answer"] == "B"
     assert result["confidence"] == 0.90
     assert result["error"] is None
+
+
+def test_mock_vision_returns_B_for_all_known_samples(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+    create_all_sample_questions()
+
+    expected_confidences = {
+        "q01_text.png": 0.90,
+        "q02_math.png": 0.90,
+        "q03_equation.png": 0.91,
+        "q04_table.png": 0.92,
+        "q05_chart.png": 0.92,
+        "q06_geometry.png": 0.93,
+        "q07_mixed.png": 0.90,
+        "q08_noisy.png": 0.88,
+    }
+
+    for file_name, confidence in expected_confidences.items():
+        result = solve_image_question(f"data/sample_questions/{file_name}")
+        assert result["status"] == "success"
+        assert result["answer"] == "B"
+        assert result["confidence"] == confidence
+        assert result["error"] is None
+
+
+def test_mock_text_rules_return_B_for_known_patterns(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+
+    examples = [
+        "What is 12 / 3 + 2?",
+        "Solve for x: 2x + 3 = 11",
+        "Product Price Notebook 20 Question: Which product costs 20?",
+        "Rectangle width 4 height 3 Question: What is the area?",
+        "4 stars and 2 more stars. How many stars are there in total?",
+    ]
+
+    for text in examples:
+        result = solve_text_question(text)
+        assert result["status"] == "success"
+        assert result["answer"] == "B"
+        assert result["confidence"] > 0
 
 
 def test_llm_service_result_keys(monkeypatch) -> None:
