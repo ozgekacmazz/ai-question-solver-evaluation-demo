@@ -1,11 +1,53 @@
-from services.llm_service import solve_text_question, solve_image_question_direct
+from app.config import settings
+
+from services.llm_service import solve_image_question, solve_text_question
 
 
-def test_solve_text_question_returns_solution_key() -> None:
+def test_empty_question_returns_failed_status() -> None:
+    result = solve_text_question("")
+
+    assert result["status"] == "failed"
+    assert result["error"] == "Question text is empty."
+    assert result["answer"] == ""
+    assert result["latency_ms"] >= 0
+
+
+def test_mock_mode_two_plus_two_question_returns_B(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
     result = solve_text_question("What is 2 + 2?")
-    assert "solution" in result
+
+    assert result["status"] == "success"
+    assert result["answer"] == "B"
+    assert result["confidence"] == 0.95
+    assert result["error"] is None
 
 
-def test_solve_image_question_direct_returns_solution_key() -> None:
-    result = solve_image_question_direct("dummy_path.png")
-    assert "solution" in result
+def test_unknown_mock_question_returns_safe_result(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+    result = solve_text_question("What is the capital of France?")
+
+    assert result["status"] == "success"
+    assert result["answer"] == "unknown"
+    assert result["error"] is None
+
+
+def test_solve_image_question_returns_not_implemented() -> None:
+    result = solve_image_question("dummy_path.png")
+
+    assert result["status"] == "failed"
+    assert "not implemented" in result["error"].lower()
+
+
+def test_llm_service_result_keys(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+    result = solve_text_question("What is 2 + 2?")
+
+    assert set(result.keys()) == {
+        "answer",
+        "explanation",
+        "confidence",
+        "raw_response",
+        "status",
+        "error",
+        "latency_ms",
+    }
