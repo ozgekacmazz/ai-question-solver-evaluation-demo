@@ -51,3 +51,13 @@ def test_llm_service_result_keys(monkeypatch) -> None:
         "error",
         "latency_ms",
     }
+
+
+def test_real_mode_missing_model_name_fails_gracefully(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", False)
+    monkeypatch.setattr(settings, "llm_model_name", None)
+    result = solve_text_question("What is 2 + 2?")
+
+    assert result["status"] == "failed"
+    assert "model name" in result["error"].lower()
+    assert result["answer"] == ""

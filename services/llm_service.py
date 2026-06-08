@@ -14,6 +14,16 @@ def _is_simple_two_plus_two(question_text: str) -> bool:
     return "2 + 2" in normalized and "what" in normalized
 
 
+def _build_messages(question_text: str) -> list[dict[str, str]]:
+    """Build messages for the LLM completion API."""
+    return [
+        {
+            "role": "user",
+            "content": f"Solve the following multiple-choice question:\n{question_text}\n\nProvide your response in this format:\nAnswer: [A/B/C/D/E]\nExplanation: [your explanation]\nConfidence: [0.0-1.0]",
+        }
+    ]
+
+
 def _build_prompt(question_text: str) -> str:
     return f"Solve the following multiple-choice question:\n{question_text}\n\nProvide the answer and a short explanation."
 
@@ -30,6 +40,8 @@ def parse_llm_response(raw_response: str) -> Dict[str, Any]:
     """Parse a raw LLM response into a simple structured form."""
     text = str(raw_response or "").strip()
     answer = "unknown"
+    explanation = ""
+    confidence_score = 0.0
     explanation_lines = []
 
     for line in text.splitlines():
@@ -44,6 +56,14 @@ def parse_llm_response(raw_response: str) -> Dict[str, Any]:
                 answer = answer_candidate
             continue
 
+        if lower_line.startswith("confidence:"):
+            conf_candidate = stripped.split(":", 1)[1].strip()
+            try:
+                confidence_score = float(conf_candidate)
+            except (ValueError, TypeError):
+                pass
+            continue
+
         if lower_line.startswith("explanation:"):
             explanation_candidate = stripped.split(":", 1)[1].strip()
             if explanation_candidate:
@@ -56,7 +76,7 @@ def parse_llm_response(raw_response: str) -> Dict[str, Any]:
     return {
         "answer": answer,
         "explanation": explanation,
-        "confidence": 0.0,
+        "confidence": confidence_score,
         "raw_response": text,
     }
 
@@ -87,32 +107,43 @@ def _real_llm_solve(question_text: str) -> Dict[str, Any]:
     if not settings.llm_model_name:
         return {
             "answer": "",
-            "explanation": "LLM model name is not configured.",
+            "explanation": "Model name is not configured.",
             "confidence": 0.0,
             "raw_response": "",
             "status": "failed",
-            "error": "LLM_MODEL_NAME is required for real LLM mode.",
+            "error": "Model name is required for real LLM mode. Set LLM_MODEL_NAME.",
         }
 
-    if completion is None or not hasattr(completion, "create"):
+    if completion is None:
         return {
             "answer": "",
-            "explanation": "LiteLLM integration is not available.",
+            "explanation": "LiteLLM is not installed.",
             "confidence": 0.0,
             "raw_response": "",
             "status": "failed",
-            "error": "litellm package is not installed or completion API is unavailable.",
+            "error": "litellm package is not installed. Install it with: pip install litellm",
         }
 
-    prompt = _build_prompt(question_text)
+    messages = _build_messages(question_text)
+    completion_kwargs = {
+        "model": settings.llm_model_name,
+        "messages": messages,
+    }
+
+    if settings.llm_api_key:
+        completion_kwargs["api_key"] = settings.llm_api_key
+
+    if settings.llm_api_base:
+        completion_kwargs["base_url"] = settings.llm_api_base
+
+    if settings.litellm_proxy_url:
+        completion_kwargs["api_base"] = settings.litellm_proxy_url
+
     try:
-        response = completion.create(
-            model=settings.llm_model_name,
-            prompt=prompt,
-            api_key=settings.llm_api_key,
-            base_url=settings.llm_api_base,
-        )
+        response = completion(**completion_kwargs)
         raw_text = _extract_raw_text(response)
+        if hasattr(response, "choices") and response.choices:
+            raw_text = response.choices[0].message.content
         parsed = parse_llm_response(raw_text)
         parsed["status"] = "success"
         parsed["error"] = None

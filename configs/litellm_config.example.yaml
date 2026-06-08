@@ -1,0 +1,21 @@
+# LiteLLM Configuration Example
+# This file demonstrates how to configure LiteLLM for use with this project.
+# Do not include real API keys in committed files.
+# Use environment variables instead.
+
+# Example: OpenAI API
+model_list:
+  - model_name: "gpt-3.5-turbo"
+    litellm_params:
+      model: "openai/gpt-3.5-turbo"
+      api_key: "os.environ/OPENAI_API_KEY"
+
+# Example: Custom LiteLLM Proxy
+  - model_name: "custom-llm"
+    litellm_params:
+      model: "provider/model-name"
+      api_key: "os.environ/LLM_API_KEY"
+      api_base: "os.environ/LLM_API_BASE"
+
+# To use a config file, set LITELLM_CONFIG_PATH environment variable.
+# Example: export LITELLM_CONFIG_PATH=configs/litellm_config.yaml

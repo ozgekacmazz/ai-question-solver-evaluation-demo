@@ -18,6 +18,7 @@ class Settings:
         self.llm_model_name: str | None = os.getenv("LLM_MODEL_NAME")
         self.llm_api_key: str | None = os.getenv("LLM_API_KEY")
         self.llm_api_base: str | None = os.getenv("LLM_API_BASE")
+        self.litellm_proxy_url: str | None = os.getenv("LITELLM_PROXY_URL")
         self.ocr_api_key: str | None = os.getenv("OCR_API_KEY")
         self.langflow_url: str | None = os.getenv("LANGFLOW_URL")
 

@@ -114,6 +114,20 @@ python scripts/run_evaluation.py
 - Since this is mock mode evaluation, it validates the infrastructure and not real model accuracy.
 - `outputs/` is ignored by git.
 
+## LiteLLM Integration
+
+This project uses **mock mode by default** and does not incur API costs.
+
+To enable real LLM solving later, set `LLM_MOCK_MODE=false` in your `.env` file and provide:
+- `LLM_MODEL_NAME`: e.g., `openai/gpt-3.5-turbo`, `anthropic/claude-3-sonnet`
+- `LLM_API_KEY`: Your LLM provider API key
+- `LLM_API_BASE` (optional): Custom API endpoint
+- `LITELLM_PROXY_URL` (optional): LiteLLM proxy server URL
+
+**Important:** Never commit real API keys. Always use `.env` and environment variables.
+
+A LiteLLM config example is available in `configs/litellm_config.example.yaml`.
+
 ## Setup
 
 1. Clone the repository.
