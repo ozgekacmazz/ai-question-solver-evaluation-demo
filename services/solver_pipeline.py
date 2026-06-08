@@ -48,6 +48,25 @@ def run_ocr_llm_pipeline(image_path: str) -> Dict[str, Any]:
     }
 
 
+def solve_question_image(image_path: str, mode: str = "ocr") -> Dict[str, Any]:
+    """Solve an uploaded question image using the requested pipeline mode."""
+    if mode == "ocr":
+        return run_ocr_llm_pipeline(image_path)
+
+    return {
+        "pipeline": mode,
+        "image_path": image_path,
+        "ocr_result": {},
+        "llm_result": {},
+        "answer": "",
+        "solution": "",
+        "explanation": "",
+        "confidence": 0.0,
+        "status": "failed",
+        "error": f"Unsupported mode: {mode}. Only 'ocr' is supported.",
+    }
+
+
 def run_vision_llm_pipeline(image_path: str) -> Dict[str, Any]:
     """Run the direct Vision LLM pipeline on a question image."""
     result = solve_image_question_direct(image_path)

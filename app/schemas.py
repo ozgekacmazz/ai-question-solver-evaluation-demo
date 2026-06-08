@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -7,13 +9,14 @@ class HealthResponse(BaseModel):
     environment: str
 
 
-class QuestionImageRequest(BaseModel):
-    image_path: str
-    pipeline: str = "ocr_llm"
-
-
-class QuestionSolutionResponse(BaseModel):
-    question_id: str | None = None
-    solution: str | None = None
+class SolveResponse(BaseModel):
+    status: str
     pipeline: str
-    confidence: float | None = None
+    image_path: str
+    ocr_result: dict[str, Any]
+    llm_result: dict[str, Any]
+    answer: str
+    solution: str
+    explanation: str
+    confidence: float
+    error: str | None = None

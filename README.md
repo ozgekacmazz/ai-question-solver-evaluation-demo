@@ -63,6 +63,30 @@ To run the OCR service tests:
 python -m pytest tests/test_ocr_service.py
 ```
 
+## FastAPI API
+
+The project exposes a simple API with a health endpoint and a solver endpoint.
+
+- Run the API:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+- Health endpoint:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+- Interactive docs:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+- Solve a question image by POSTing a file to `/solve` with `mode=ocr`.
+
 ## Setup
 
 1. Clone the repository.
