@@ -39,6 +39,30 @@ The project is designed to compare the performance of text-first and image-first
 - pytest
 - litellm
 
+## OCR Pipeline
+
+This repository includes a beginner-friendly OCR pipeline that:
+
+- loads a question image from disk,
+- preprocesses it for cleaner OCR with OpenCV,
+- extracts text using `pytesseract` and English language support,
+- returns a structured result with `text`, `status`, `error`, and `debug_image_path`,
+- and saves a debug image when requested.
+
+`pytesseract` is a Python wrapper for the Tesseract OCR engine. Tesseract must also be installed separately on your computer for OCR to work.
+
+To create a sample question image:
+
+```bash
+python scripts/create_sample_questions.py
+```
+
+To run the OCR service tests:
+
+```bash
+python -m pytest tests/test_ocr_service.py
+```
+
 ## Setup
 
 1. Clone the repository.

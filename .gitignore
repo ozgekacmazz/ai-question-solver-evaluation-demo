@@ -8,3 +8,4 @@ logs/
 .pytest_cache/
 .streamlit/
 .DS_Store
+outputs/debug/
