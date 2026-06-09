@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from app.config import settings
 from scripts.create_benchmark_questions import create_all_benchmark_questions
 from scripts.create_sample_questions import create_all_sample_questions
 from scripts.run_evaluation import get_dataset_configs, run_evaluation
@@ -29,6 +30,14 @@ def test_evaluate_answer_correct() -> None:
     result = evaluate_answer("B", "B")
     assert result["is_correct"] is True
     assert result["needs_manual_review"] is False
+
+
+def test_evaluate_answer_normalizes_phrased_answers() -> None:
+    result = evaluate_answer("The correct answer is B.", "B)")
+
+    assert result["predicted_normalized"] == "B"
+    assert result["correct_normalized"] == "B"
+    assert result["is_correct"] is True
 
 
 def test_evaluate_answer_incorrect() -> None:
@@ -132,10 +141,17 @@ def test_run_batch_evaluation_creates_csv(tmp_path: Path, monkeypatch) -> None:
     assert "ocr_answer" in df.columns
     assert "vision_answer" in df.columns
     assert "final_confidence" in df.columns
+    assert "ocr_original_answer" in df.columns
+    assert "vision_original_answer" in df.columns
+    assert "ocr_answer_repaired" in df.columns
+    assert "vision_answer_repaired" in df.columns
+    assert "ocr_repair_reason" in df.columns
+    assert "vision_repair_reason" in df.columns
     assert len(results) == len(df)
 
 
-def test_run_batch_evaluation_can_run_dataset_in_both_mode(tmp_path: Path) -> None:
+def test_run_batch_evaluation_can_run_dataset_in_both_mode(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
     output_csv = tmp_path / "results.csv"
     create_all_sample_questions(Path("data/sample_questions"))
 
@@ -158,6 +174,7 @@ def test_run_evaluation_dataset_configs_load_sample_and_benchmark() -> None:
 
 
 def test_benchmark_evaluation_runs_without_api_keys(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
     create_all_benchmark_questions(Path("data/benchmark_questions"))
 
     import scripts.run_evaluation as run_evaluation_module

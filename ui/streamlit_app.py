@@ -73,12 +73,16 @@ def main() -> None:
             st.subheader("Results")
             st.write(f"**Answer:** {result.get('answer', '')}")
             st.write(f"**Explanation:** {result.get('explanation', '')}")
+            if result.get("provider_mode"):
+                st.write(f"**Provider mode:** {result.get('provider_mode')}")
             st.metric("Confidence", f"{result.get('confidence', 0.0):.2f}")
 
         elif mode == "vision":
             st.subheader("Vision Result")
             st.write(f"**Answer:** {result.get('answer', '')}")
             st.write(f"**Explanation:** {result.get('explanation', '')}")
+            if result.get("provider_mode"):
+                st.write(f"**Provider mode:** {result.get('provider_mode')}")
             st.metric("Confidence", f"{result.get('confidence', 0.0):.2f}")
 
         else:
@@ -89,11 +93,15 @@ def main() -> None:
             st.code(ocr_result.get("ocr_result", {}).get("text", "") or "(no text extracted)")
             st.write(f"**Answer:** {ocr_result.get('answer', '')}")
             st.write(f"**Explanation:** {ocr_result.get('explanation', '')}")
+            if result.get("ocr_provider_mode") or ocr_result.get("provider_mode"):
+                st.write(f"**OCR provider mode:** {result.get('ocr_provider_mode') or ocr_result.get('provider_mode')}")
             st.metric("OCR Confidence", f"{ocr_result.get('confidence', 0.0):.2f}")
 
             st.subheader("Vision LLM Result")
             st.write(f"**Answer:** {vision_result.get('answer', '')}")
             st.write(f"**Explanation:** {vision_result.get('explanation', '')}")
+            if result.get("vision_provider_mode") or vision_result.get("provider_mode"):
+                st.write(f"**Vision provider mode:** {result.get('vision_provider_mode') or vision_result.get('provider_mode')}")
             st.metric("Vision Confidence", f"{vision_result.get('confidence', 0.0):.2f}")
 
             st.subheader("Recommendation")

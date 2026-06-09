@@ -26,6 +26,7 @@ def test_solve_question_image_ocr_mode(monkeypatch) -> None:
             "confidence": 0.95,
             "status": "success",
             "error": None,
+            "provider_mode": "real",
         }
 
     monkeypatch.setattr("services.solver_pipeline.run_ocr_llm_pipeline", mock_run_ocr_llm_pipeline)
@@ -49,6 +50,7 @@ def test_solve_question_image_vision_mode(monkeypatch) -> None:
             "confidence": 0.90,
             "status": "success",
             "error": None,
+            "provider_mode": "real",
         }
 
     monkeypatch.setattr("services.solver_pipeline.run_vision_llm_pipeline", mock_run_vision_llm_pipeline)
@@ -72,6 +74,7 @@ def test_solve_question_image_both_mode_returns_recommendation(monkeypatch) -> N
             "confidence": 0.95,
             "status": "success",
             "error": None,
+            "provider_mode": "real",
         }
 
     def mock_run_vision_llm_pipeline(image_path: str) -> dict:
@@ -86,6 +89,7 @@ def test_solve_question_image_both_mode_returns_recommendation(monkeypatch) -> N
             "confidence": 0.90,
             "status": "success",
             "error": None,
+            "provider_mode": "real",
         }
 
     monkeypatch.setattr("services.solver_pipeline.run_ocr_llm_pipeline", mock_run_ocr_llm_pipeline)
@@ -97,6 +101,9 @@ def test_solve_question_image_both_mode_returns_recommendation(monkeypatch) -> N
     assert result["recommended_pipeline"] == "both_agree"
     assert "comparison_summary" in result
     assert result["answer"] == "B"
+    assert result["ocr_provider_mode"] == "real"
+    assert result["vision_provider_mode"] == "real"
+    assert result["provider_mode"] == "real"
 
 
 def test_both_mode_does_not_recommend_agreement_when_both_unknown(monkeypatch) -> None:
@@ -167,6 +174,219 @@ def test_both_mode_recommends_vision_when_ocr_unknown(monkeypatch) -> None:
     assert result["recommended_pipeline"] == "vision_llm"
     assert result["answer"] == "B"
     assert result["confidence"] == 0.92
+
+
+def test_visual_conflict_prefers_vision_when_confident(monkeypatch) -> None:
+    def mock_run_ocr_llm_pipeline(image_path: str) -> dict:
+        return {
+            "pipeline": "ocr_llm",
+            "image_path": image_path,
+            "ocr_result": {"text": "Fruit Values chart. Which fruit has the highest value?", "status": "success"},
+            "llm_result": {"status": "success", "raw_response": "Answer: A"},
+            "answer": "A",
+            "solution": "A",
+            "explanation": "OCR selected A.",
+            "confidence": 0.90,
+            "status": "success",
+            "error": None,
+            "provider_mode": "real",
+        }
+
+    def mock_run_vision_llm_pipeline(image_path: str) -> dict:
+        return {
+            "pipeline": "vision_llm",
+            "image_path": image_path,
+            "ocr_result": {},
+            "llm_result": {"status": "success", "raw_response": "Answer: B"},
+            "answer": "B",
+            "solution": "B",
+            "explanation": "Vision selected B.",
+            "confidence": 0.90,
+            "status": "success",
+            "error": None,
+            "provider_mode": "real",
+        }
+
+    monkeypatch.setattr("services.solver_pipeline.run_ocr_llm_pipeline", mock_run_ocr_llm_pipeline)
+    monkeypatch.setattr("services.solver_pipeline.run_vision_llm_pipeline", mock_run_vision_llm_pipeline)
+
+    result = solve_question_image("data/sample_questions/q05_chart.png", mode="both")
+
+    assert result["recommended_pipeline"] == "vision_llm"
+    assert result["answer"] == "B"
+
+
+def test_both_mode_prefers_repaired_answer_over_unrepaired_conflict(monkeypatch) -> None:
+    def mock_run_ocr_llm_pipeline(image_path: str) -> dict:
+        return {
+            "pipeline": "ocr_llm",
+            "image_path": image_path,
+            "ocr_result": {"text": "What is 12 / 3 + 2?\nA) 4\nB) 6\nC) 8", "status": "success"},
+            "llm_result": {
+                "answer": "C",
+                "solution": "C",
+                "explanation": "12 / 3 + 2 equals 6, so the correct option is B.",
+                "confidence": 0.77,
+                "raw_response": "Answer: C\nExplanation: 12 / 3 + 2 equals 6, so the correct option is B.",
+                "status": "success",
+                "error": None,
+                "provider_mode": "real",
+            },
+            "answer": "B",
+            "original_answer": "C",
+            "solution": "B",
+            "explanation": "12 / 3 + 2 equals 6, so the correct option is B.",
+            "confidence": 0.8,
+            "status": "success",
+            "error": None,
+            "provider_mode": "real",
+            "answer_repaired": True,
+            "repair_reason": "Explanation matched option B",
+        }
+
+    def mock_run_vision_llm_pipeline(image_path: str) -> dict:
+        return {
+            "pipeline": "vision_llm",
+            "image_path": image_path,
+            "ocr_result": {},
+            "llm_result": {
+                "answer": "D",
+                "solution": "D",
+                "explanation": "Vision selected D.",
+                "confidence": 0.9,
+                "raw_response": "Answer: D\nExplanation: Vision selected D.",
+                "status": "success",
+                "error": None,
+                "provider_mode": "real",
+            },
+            "answer": "D",
+            "original_answer": "D",
+            "solution": "D",
+            "explanation": "Vision selected D.",
+            "confidence": 0.9,
+            "status": "success",
+            "error": None,
+            "provider_mode": "real",
+            "answer_repaired": False,
+            "repair_reason": "",
+        }
+
+    monkeypatch.setattr("services.solver_pipeline.run_ocr_llm_pipeline", mock_run_ocr_llm_pipeline)
+    monkeypatch.setattr("services.solver_pipeline.run_vision_llm_pipeline", mock_run_vision_llm_pipeline)
+
+    result = solve_question_image("question.png", mode="both")
+
+    assert result["answer"] == "B"
+    assert result["recommended_pipeline"] == "ocr_llm"
+    assert result["ocr_original_answer"] == "C"
+    assert result["ocr_answer_repaired"] is True
+
+
+def test_non_visual_conflict_chooses_higher_confidence(monkeypatch) -> None:
+    def mock_run_ocr_llm_pipeline(image_path: str) -> dict:
+        return {
+            "pipeline": "ocr_llm",
+            "image_path": image_path,
+            "ocr_result": {"text": "What is the result of the expression?", "status": "success"},
+            "llm_result": {"status": "success", "raw_response": "Answer: A"},
+            "answer": "A",
+            "solution": "A",
+            "explanation": "OCR selected A.",
+            "confidence": 0.95,
+            "status": "success",
+            "error": None,
+            "provider_mode": "real",
+        }
+
+    def mock_run_vision_llm_pipeline(image_path: str) -> dict:
+        return {
+            "pipeline": "vision_llm",
+            "image_path": image_path,
+            "ocr_result": {},
+            "llm_result": {"status": "success", "raw_response": "Answer: B"},
+            "answer": "B",
+            "solution": "B",
+            "explanation": "Vision selected B.",
+            "confidence": 0.90,
+            "status": "success",
+            "error": None,
+            "provider_mode": "real",
+        }
+
+    monkeypatch.setattr("services.solver_pipeline.run_ocr_llm_pipeline", mock_run_ocr_llm_pipeline)
+    monkeypatch.setattr("services.solver_pipeline.run_vision_llm_pipeline", mock_run_vision_llm_pipeline)
+
+    result = solve_question_image("plain_text_question.png", mode="both")
+
+    assert result["recommended_pipeline"] == "ocr_llm"
+    assert result["answer"] == "A"
+
+
+def test_both_mode_repairs_vision_result_using_ocr_options(monkeypatch) -> None:
+    def mock_run_ocr_llm_pipeline(image_path: str) -> dict:
+        return {
+            "pipeline": "ocr_llm",
+            "image_path": image_path,
+            "ocr_result": {
+                "text": "A rectangle has area 40 and height 5. What is x?\nA)6\nB)8\nC)10\nD)12",
+                "status": "success",
+            },
+            "llm_result": {
+                "answer": "A",
+                "solution": "A",
+                "explanation": "OCR selected A.",
+                "confidence": 0.7,
+                "raw_response": "Answer: A",
+                "status": "success",
+                "error": None,
+                "provider_mode": "real",
+            },
+            "answer": "A",
+            "solution": "A",
+            "explanation": "OCR selected A.",
+            "confidence": 0.7,
+            "status": "success",
+            "error": None,
+            "provider_mode": "real",
+            "answer_repaired": False,
+            "repair_reason": "",
+        }
+
+    def mock_run_vision_llm_pipeline(image_path: str) -> dict:
+        return {
+            "pipeline": "vision_llm",
+            "image_path": image_path,
+            "ocr_result": {},
+            "llm_result": {
+                "answer": "C",
+                "solution": "C",
+                "explanation": "Area = width * height; 40 = x * 5; x = 40 / 5 = 8",
+                "confidence": 0.86,
+                "raw_response": "Answer: C",
+                "status": "success",
+                "error": None,
+                "provider_mode": "real",
+            },
+            "answer": "C",
+            "solution": "C",
+            "explanation": "Area = width * height; 40 = x * 5; x = 40 / 5 = 8",
+            "confidence": 0.86,
+            "status": "success",
+            "error": None,
+            "provider_mode": "real",
+            "answer_repaired": False,
+            "repair_reason": "",
+        }
+
+    monkeypatch.setattr("services.solver_pipeline.run_ocr_llm_pipeline", mock_run_ocr_llm_pipeline)
+    monkeypatch.setattr("services.solver_pipeline.run_vision_llm_pipeline", mock_run_vision_llm_pipeline)
+
+    result = solve_question_image("data/sample_questions/q16_mixed_rectangle.png", mode="both")
+
+    assert result["recommended_pipeline"] == "vision_llm"
+    assert result["answer"] == "B"
+    assert result["vision_original_answer"] == "C"
+    assert result["vision_answer_repaired"] is True
 
 
 def test_solve_question_image_unsupported_mode_returns_failed_status() -> None:

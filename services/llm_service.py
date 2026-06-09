@@ -1,6 +1,8 @@
 import base64
+import json
 import mimetypes
 from pathlib import Path
+import re
 import time
 from typing import Any, Dict
 
@@ -26,7 +28,16 @@ def _build_messages(question_text: str) -> list[dict[str, str]]:
     return [
         {
             "role": "user",
-            "content": f"Solve the following multiple-choice question:\n{question_text}\n\nProvide your response in this format:\nAnswer: [A/B/C/D/E]\nExplanation: [your explanation]\nConfidence: [0.0-1.0]",
+            "content": (
+                "Solve the multiple-choice question.\n"
+                "Return ONLY valid JSON. Do not include Markdown. Do not include extra text.\n"
+                "The JSON schema must be:\n"
+                '{\n  "answer": "A|B|C|D|E",\n  "explanation": "short explanation",\n  "confidence": 0.0\n}\n'
+                "The answer must be a single uppercase letter only. Confidence must be a number between 0 and 1.\n"
+                "If the question is unclear, return:\n"
+                '{\n  "answer": "unknown",\n  "explanation": "The question could not be solved reliably.",\n  "confidence": 0.0\n}\n\n'
+                f"Question:\n{question_text}"
+            ),
         }
     ]
 
@@ -50,7 +61,15 @@ def _build_vision_messages(image_path: str) -> list[dict]:
             "content": [
                 {
                     "type": "text",
-                    "text": "Solve this multiple-choice question image. Return exactly this format: Answer: [A/B/C/D/E], Explanation: ..., Confidence: [0.0-1.0]",
+                    "text": (
+                        "Solve the multiple-choice question in this image.\n"
+                        "Return ONLY valid JSON. Do not include Markdown. Do not include extra text.\n"
+                        "The JSON schema must be:\n"
+                        '{\n  "answer": "A|B|C|D|E",\n  "explanation": "short explanation",\n  "confidence": 0.0\n}\n'
+                        "The answer must be a single uppercase letter only. Confidence must be a number between 0 and 1.\n"
+                        "If the question is unclear, return:\n"
+                        '{\n  "answer": "unknown",\n  "explanation": "The question could not be solved reliably.",\n  "confidence": 0.0\n}'
+                    ),
                 },
                 {
                     "type": "image_url",
@@ -75,49 +94,328 @@ def _extract_raw_text(response: Any) -> str:
     return str(response)
 
 
-def parse_llm_response(raw_response: str) -> Dict[str, Any]:
-    """Parse a raw LLM response into a simple structured form."""
-    text = str(raw_response or "").strip()
+def _current_provider_mode() -> str:
+    return "mock" if settings.llm_mock_mode else "real"
+
+
+def _sanitize_error_message(message: str) -> str:
+    sanitized = str(message)
+    if settings.llm_api_key:
+        sanitized = sanitized.replace(settings.llm_api_key, "[REDACTED_API_KEY]")
+    return sanitized
+
+
+def _real_failure_result(error: str) -> Dict[str, Any]:
+    return {
+        "answer": "unknown",
+        "solution": "",
+        "explanation": "",
+        "confidence": 0.0,
+        "raw_response": "",
+        "status": "failed",
+        "error": _sanitize_error_message(error),
+        "provider_mode": "real",
+    }
+
+
+def normalize_answer(value: str) -> str:
+    """Normalize model answer text to A-E or unknown."""
+    if not isinstance(value, str):
+        return "unknown"
+
+    text = value.strip()
+    if not text:
+        return "unknown"
+
+    lowered = text.lower().strip(" .:;!?)(")
+    if lowered == "unknown":
+        return "unknown"
+
+    direct = text.strip().upper().strip(" .:;!?)(")
+    if direct in {"A", "B", "C", "D", "E"}:
+        return direct
+
+    patterns = [
+        r"\b(?:option|choice|answer)\s*[:#-]?\s*([A-E])\b",
+        r"\bcorrect\s+answer\s+(?:is|:)?\s*([A-E])\b",
+        r"\bfinal\s+answer\s+(?:is|:)?\s*([A-E])\b",
+    ]
+    for pattern in patterns:
+        matches = re.findall(pattern, text, flags=re.IGNORECASE)
+        if matches:
+            return matches[-1].upper()
+
+    return "unknown"
+
+
+def _normalize_for_comparison(text: str) -> str:
+    if not isinstance(text, str):
+        return ""
+
+    normalized = text.strip().lower()
+    normalized = re.sub(r"\s+", " ", normalized)
+    return normalized.strip(" \t\r\n\"'`.,:;!?")
+
+
+def normalize_option_value(value: str) -> str:
+    """Normalize OCR/model math text so option values can be compared safely."""
+    if not isinstance(value, str):
+        return ""
+
+    normalized = value.strip().lower()
+    normalized = normalized.replace("\u00b2", "^2")
+    normalized = normalized.replace("²", "^2")
+    normalized = normalized.replace("×", "*").replace("⋅", "*").replace("·", "*")
+    normalized = re.sub(r"\bx\s*\*\s*2\s*4\b", "x^2", normalized)
+    normalized = re.sub(r"\bx\s*\*\s*2\b", "x^2", normalized)
+    normalized = re.sub(r"\bx\s*4\s*2\b", "x^2", normalized)
+    normalized = re.sub(r"\s+", " ", normalized)
+    normalized = re.sub(r"\s*([+\-*/=^()])\s*", r" \1 ", normalized)
+    normalized = re.sub(r"\s+", " ", normalized)
+    normalized = normalized.strip(" \t\r\n\"'`.,:;!?")
+    normalized = re.sub(r"\bx\s*\^\s*2\b", "x^2", normalized)
+    return normalized
+
+
+def _canonicalize_option_value(text: str) -> str:
+    normalized = normalize_option_value(text)
+    return re.sub(r"\s+", "", normalized)
+
+
+def _is_numeric_like(text: str) -> bool:
+    return bool(re.fullmatch(r"[+-]?\d+(?:\.\d+)?", text or ""))
+
+
+def _clean_extracted_option_value(value: str) -> str:
+    if not isinstance(value, str):
+        return ""
+
+    cleaned = re.sub(r"\s+", " ", value).strip(" \t\r\n;|")
+    visual_tail_match = re.match(
+        r"^([+-]?\d+(?:\.\d+)?)\s+(?:height|width|length|area|base|diagram|figure|label|labels|rectangle|triangle)\b",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    if visual_tail_match:
+        return visual_tail_match.group(1)
+    return cleaned
+
+
+def extract_options_from_text(text: str) -> Dict[str, str]:
+    """Extract multiple-choice option labels and values from OCR text."""
+    if not isinstance(text, str) or not text.strip():
+        return {}
+
+    option_pattern = re.compile(
+        r"(?<![A-Za-z0-9+^*/])([A-E])(?:[ \t]*\1)?[ \t]*[\)\.:\-]\s*",
+        flags=re.IGNORECASE,
+    )
+    matches = list(option_pattern.finditer(text))
+    if not matches:
+        return {}
+
+    options: Dict[str, str] = {}
+    for index, match in enumerate(matches):
+        label = match.group(1).upper()
+        value_start = match.end()
+        value_end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        value = _clean_extracted_option_value(text[value_start:value_end])
+        if value:
+            options[label] = value
+
+    return options
+
+
+def infer_answer_from_explanation_and_options(explanation: str, options: Dict[str, str]) -> str:
+    """Infer the answer letter from explanatory text and parsed option values."""
+    if not isinstance(explanation, str) or not explanation.strip():
+        return "unknown"
+
+    normalized_options = {
+        letter.upper(): _canonicalize_option_value(value)
+        for letter, value in options.items()
+        if isinstance(value, str) and _canonicalize_option_value(value)
+    }
+    if not normalized_options:
+        return "unknown"
+
+    explicit_patterns = [
+        r"\b(?:correct answer|correct option|final answer|answer should|answer must be|the answer should|the answer is|answer is|corresponds to option|corresponds to|select option|choose option)\s*(?:is|:|-)?\s*\(?\s*([A-E])\s*\)?\b",
+        r"\b(?:option|choice)\s*([A-E])\b",
+    ]
+    for pattern in explicit_patterns:
+        matches = re.findall(pattern, explanation, flags=re.IGNORECASE)
+        if matches:
+            return str(matches[-1]).upper()
+
+    candidate_patterns = [
+        r"(?:=|equals|equal to|is|becomes|gives|yields|results in|evaluates to|simplifies to|produces)\s*([^\n.;,]+)",
+        r"\b(?:final answer|answer|result|value)\s*(?:is|=|:|-)\s*([^\n.;,]+)",
+    ]
+
+    candidate_counts: Dict[str, int] = {}
+    final_numeric_letters: list[str] = []
+    normalized_explanation = _canonicalize_option_value(explanation)
+
+    for pattern in candidate_patterns:
+        for match in re.findall(pattern, explanation, flags=re.IGNORECASE):
+            candidate = _canonicalize_option_value(str(match))
+            if not candidate:
+                continue
+            matched_letters = [letter for letter, option_value in normalized_options.items() if option_value == candidate]
+            if len(matched_letters) == 1:
+                letter = matched_letters[0]
+                candidate_counts[letter] = candidate_counts.get(letter, 0) + 1
+
+            final_number_match = re.search(r"([+-]?\d+(?:\.\d+)?)\s*$", str(match).strip())
+            if final_number_match:
+                final_number = _canonicalize_option_value(final_number_match.group(1))
+                numeric_matches = [
+                    letter for letter, option_value in normalized_options.items() if option_value == final_number
+                ]
+                if len(numeric_matches) == 1:
+                    letter = numeric_matches[0]
+                    final_numeric_letters.append(letter)
+                    candidate_counts[letter] = candidate_counts.get(letter, 0) + 1
+
+    value_matches: list[tuple[str, str]] = []
+    for letter, option_value in normalized_options.items():
+        if option_value and not _is_numeric_like(option_value):
+            pattern = rf"(?:^|[^a-z0-9]){re.escape(option_value)}(?:$|[^a-z0-9])"
+            if re.search(pattern, normalized_explanation):
+                value_matches.append((letter, option_value))
+
+    if value_matches:
+        longest_match_length = max(len(option_value) for _, option_value in value_matches)
+        longest_matches = [
+            letter for letter, option_value in value_matches if len(option_value) == longest_match_length
+        ]
+        if len(longest_matches) == 1:
+            letter = longest_matches[0]
+            candidate_counts[letter] = candidate_counts.get(letter, 0) + 1
+
+    if not candidate_counts:
+        return "unknown"
+
+    best_score = max(candidate_counts.values())
+    best_letters = [letter for letter, score in candidate_counts.items() if score == best_score]
+    if len(best_letters) != 1:
+        if final_numeric_letters and final_numeric_letters[-1] in best_letters:
+            return final_numeric_letters[-1]
+        return "unknown"
+    return best_letters[0]
+
+
+def repair_llm_result_with_options(result: Dict[str, Any], ocr_text: str) -> Dict[str, Any]:
+    """Repair an LLM result when the explanation clearly matches one OCR option."""
+    repaired = dict(result or {})
+    current_answer = normalize_answer(str(repaired.get("answer", "")))
+    explanation = str(repaired.get("explanation", "") or "").strip()
+    raw_response = str(repaired.get("raw_response", "") or "").strip()
+    source_text = "\n".join(part for part in [explanation, raw_response] if part)
+    options_source = ocr_text if isinstance(ocr_text, str) and ocr_text.strip() else raw_response
+    options = extract_options_from_text(options_source)
+
+    inferred_answer = infer_answer_from_explanation_and_options(source_text, options)
+    repaired["original_answer"] = current_answer
+    repaired["answer_repaired"] = False
+    repaired.setdefault("repair_reason", "")
+
+    if inferred_answer in {"A", "B", "C", "D", "E"} and inferred_answer != current_answer:
+        repaired["answer"] = inferred_answer
+        repaired["solution"] = inferred_answer
+        repaired["answer_repaired"] = True
+        repaired["repair_reason"] = f"Explanation matched option {inferred_answer}"
+        confidence = _clamp_confidence(repaired.get("confidence", 0.0))
+        repaired["confidence"] = confidence if confidence >= 0.8 else max(confidence, 0.8)
+
+    return repaired
+
+
+def _clamp_confidence(value: Any) -> float:
+    try:
+        confidence = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    return max(0.0, min(1.0, confidence))
+
+
+def _parse_json_response(text: str) -> Dict[str, Any] | None:
+    candidates = [text]
+    json_match = re.search(r"\{.*\}", text, flags=re.DOTALL)
+    if json_match:
+        candidates.append(json_match.group(0))
+
+    for candidate in candidates:
+        try:
+            parsed = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(parsed, dict):
+            continue
+        answer = normalize_answer(str(parsed.get("answer", "")))
+        explanation = str(parsed.get("explanation", "") or "").strip()
+        return {
+            "answer": answer,
+            "explanation": explanation,
+            "confidence": _clamp_confidence(parsed.get("confidence", 0.0)),
+            "raw_response": text,
+        }
+    return None
+
+
+def _parse_regex_response(text: str) -> Dict[str, Any]:
     answer = "unknown"
-    explanation = ""
-    confidence_score = 0.0
-    explanation_lines = []
+    final_patterns = [
+        r"\bfinal\s+answer\s*(?:is|:|-)?\s*([A-E])\b",
+        r"\bcorrect\s+answer\s*(?:is|:|-)?\s*([A-E])\b",
+    ]
+    secondary_patterns = [
+        r"\banswer\s*(?:is|:|-)?\s*([A-E])\b",
+        r"\boption\s+([A-E])\b",
+        r"\bchoice\s+([A-E])\b",
+    ]
 
-    for line in text.splitlines():
-        stripped = line.strip()
-        if not stripped:
-            continue
+    for pattern in final_patterns:
+        matches = re.findall(pattern, text, flags=re.IGNORECASE)
+        if matches:
+            answer = matches[-1].upper()
 
-        lower_line = stripped.lower()
-        if lower_line.startswith("answer:"):
-            answer_candidate = stripped.split(":", 1)[1].strip()
-            if answer_candidate:
-                answer = answer_candidate
-            continue
+    if answer == "unknown":
+        for pattern in secondary_patterns:
+            matches = re.findall(pattern, text, flags=re.IGNORECASE)
+            if matches:
+                answer = matches[-1].upper()
 
-        if lower_line.startswith("confidence:"):
-            conf_candidate = stripped.split(":", 1)[1].strip()
-            try:
-                confidence_score = float(conf_candidate)
-            except (ValueError, TypeError):
-                pass
-            continue
+    confidence = 0.0
+    confidence_match = re.search(r"\bconfidence\s*(?:is|:|-)?\s*([01](?:\.\d+)?)\b", text, flags=re.IGNORECASE)
+    if confidence_match:
+        confidence = _clamp_confidence(confidence_match.group(1))
 
-        if lower_line.startswith("explanation:"):
-            explanation_candidate = stripped.split(":", 1)[1].strip()
-            if explanation_candidate:
-                explanation_lines.append(explanation_candidate)
-            continue
+    explanation = text.strip()
+    explanation_match = re.search(r"\bexplanation\s*(?:is|:|-)?\s*(.+)", text, flags=re.IGNORECASE | re.DOTALL)
+    if explanation_match:
+        explanation = explanation_match.group(1).strip()
 
-        explanation_lines.append(stripped)
-
-    explanation = " ".join(explanation_lines).strip() or text
     return {
         "answer": answer,
         "explanation": explanation,
-        "confidence": confidence_score,
+        "confidence": confidence,
         "raw_response": text,
     }
+
+
+def parse_llm_response(raw_response: str) -> Dict[str, Any]:
+    """Parse a raw LLM response into a structured form."""
+    text = str(raw_response or "").strip()
+    if not text:
+        return {"answer": "unknown", "explanation": "", "confidence": 0.0, "raw_response": ""}
+
+    json_result = _parse_json_response(text)
+    if json_result is not None:
+        return json_result
+
+    return _parse_regex_response(text)
 
 
 def _mock_solve(question_text: str) -> Dict[str, Any]:
@@ -161,20 +459,24 @@ def _mock_solve(question_text: str) -> Dict[str, Any]:
             raw_response = f"Answer: B\nExplanation: {explanation}\nConfidence: {confidence:.2f}"
             return {
                 "answer": "B",
+                "solution": "B",
                 "explanation": explanation,
                 "confidence": confidence,
                 "raw_response": raw_response,
                 "status": "success",
                 "error": None,
+                "provider_mode": "mock",
             }
 
     return {
         "answer": "unknown",
+        "solution": "unknown",
         "explanation": "Mock mode cannot solve this question reliably.",
         "confidence": 0.0,
         "raw_response": question_text,
         "status": "success",
         "error": None,
+        "provider_mode": "mock",
     }
 
 
@@ -182,11 +484,13 @@ def _mock_vision_success(explanation: str, confidence: float) -> Dict[str, Any]:
     raw_response = f"Answer: B\nExplanation: {explanation}\nConfidence: {confidence:.2f}"
     return {
         "answer": "B",
+        "solution": "B",
         "explanation": explanation,
         "confidence": confidence,
         "raw_response": raw_response,
         "status": "success",
         "error": None,
+        "provider_mode": "mock",
     }
 
 
@@ -248,43 +552,33 @@ def _mock_solve_image(image_path: str) -> Dict[str, Any]:
     if image_name.startswith("q") and any(token in image_name for token in benchmark_tokens):
         return {
             "answer": "unknown",
+            "solution": "unknown",
             "explanation": "Benchmark questions require real model evaluation. Mock mode does not solve this advanced question.",
             "confidence": 0.0,
             "raw_response": "",
             "status": "success",
             "error": None,
+            "provider_mode": "mock",
         }
 
     return {
         "answer": "unknown",
+        "solution": "unknown",
         "explanation": "Mock vision mode cannot solve this image reliably.",
         "confidence": 0.0,
         "raw_response": "",
         "status": "success",
         "error": None,
+        "provider_mode": "mock",
     }
 
 
 def _real_llm_solve(question_text: str) -> Dict[str, Any]:
     if not settings.llm_model_name:
-        return {
-            "answer": "",
-            "explanation": "Model name is not configured.",
-            "confidence": 0.0,
-            "raw_response": "",
-            "status": "failed",
-            "error": "Model name is required for real LLM mode. Set LLM_MODEL_NAME.",
-        }
+        return _real_failure_result("Model name is required for real LLM mode. Set LLM_MODEL_NAME.")
 
     if completion is None:
-        return {
-            "answer": "",
-            "explanation": "LiteLLM is not installed.",
-            "confidence": 0.0,
-            "raw_response": "",
-            "status": "failed",
-            "error": "litellm package is not installed. Install it with: pip install litellm",
-        }
+        return _real_failure_result("litellm package is not installed. Install it with: pip install litellm")
 
     messages = _build_messages(question_text)
     completion_kwargs = {
@@ -307,40 +601,21 @@ def _real_llm_solve(question_text: str) -> Dict[str, Any]:
         if hasattr(response, "choices") and response.choices:
             raw_text = response.choices[0].message.content
         parsed = parse_llm_response(raw_text)
+        parsed["solution"] = parsed.get("answer", "")
         parsed["status"] = "success"
         parsed["error"] = None
+        parsed["provider_mode"] = "real"
         return parsed
     except Exception as exc:  # pragma: no cover
-        return {
-            "answer": "",
-            "explanation": "Failed to request the real LLM.",
-            "confidence": 0.0,
-            "raw_response": "",
-            "status": "failed",
-            "error": f"Real LLM request failed: {exc}",
-        }
+        return _real_failure_result(f"Real LLM request failed: {exc}")
 
 
 def _real_vision_solve(image_path: str) -> Dict[str, Any]:
     if not settings.llm_model_name:
-        return {
-            "answer": "",
-            "explanation": "Model name is not configured.",
-            "confidence": 0.0,
-            "raw_response": "",
-            "status": "failed",
-            "error": "Model name is required for real vision LLM mode. Set LLM_MODEL_NAME.",
-        }
+        return _real_failure_result("Model name is required for real vision LLM mode. Set LLM_MODEL_NAME.")
 
     if completion is None:
-        return {
-            "answer": "",
-            "explanation": "LiteLLM is not installed.",
-            "confidence": 0.0,
-            "raw_response": "",
-            "status": "failed",
-            "error": "litellm package is not installed. Install it with: pip install litellm",
-        }
+        return _real_failure_result("litellm package is not installed. Install it with: pip install litellm")
 
     completion_kwargs = {
         "model": settings.llm_model_name,
@@ -362,18 +637,13 @@ def _real_vision_solve(image_path: str) -> Dict[str, Any]:
         if hasattr(response, "choices") and response.choices:
             raw_text = response.choices[0].message.content
         parsed = parse_llm_response(raw_text)
+        parsed["solution"] = parsed.get("answer", "")
         parsed["status"] = "success"
         parsed["error"] = None
+        parsed["provider_mode"] = "real"
         return parsed
     except Exception as exc:  # pragma: no cover
-        return {
-            "answer": "",
-            "explanation": "Failed to request the real vision LLM.",
-            "confidence": 0.0,
-            "raw_response": "",
-            "status": "failed",
-            "error": f"Real vision LLM request failed: {exc}",
-        }
+        return _real_failure_result(f"Real vision LLM request failed: {exc}")
 
 
 def solve_text_question(question_text: str) -> Dict[str, Any]:
@@ -383,12 +653,14 @@ def solve_text_question(question_text: str) -> Dict[str, Any]:
         duration = int((time.perf_counter() - start) * 1000)
         return {
             "answer": "",
+            "solution": "",
             "explanation": "Question text is required.",
             "confidence": 0.0,
             "raw_response": "",
             "status": "failed",
             "error": "Question text is empty.",
             "latency_ms": duration,
+            "provider_mode": _current_provider_mode(),
         }
 
     if settings.llm_mock_mode:
@@ -407,24 +679,28 @@ def solve_image_question(image_path: str) -> Dict[str, Any]:
         duration = int((time.perf_counter() - start) * 1000)
         return {
             "answer": "",
+            "solution": "",
             "explanation": "Image path is required.",
             "confidence": 0.0,
             "raw_response": "",
             "status": "failed",
             "error": "Image path is empty.",
             "latency_ms": duration,
+            "provider_mode": _current_provider_mode(),
         }
 
     if not Path(image_path).exists():
         duration = int((time.perf_counter() - start) * 1000)
         return {
             "answer": "",
+            "solution": "",
             "explanation": "Image file does not exist.",
             "confidence": 0.0,
             "raw_response": "",
             "status": "failed",
             "error": f"Image file not found: {image_path}",
             "latency_ms": duration,
+            "provider_mode": _current_provider_mode(),
         }
 
     if settings.llm_mock_mode:

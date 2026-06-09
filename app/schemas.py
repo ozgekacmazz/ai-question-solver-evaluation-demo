@@ -20,7 +20,19 @@ class SolveResponse(BaseModel):
     explanation: str
     confidence: float
     error: str | None = None
+    provider_mode: str | None = None
     ocr_pipeline_result: dict[str, Any] | None = None
     vision_pipeline_result: dict[str, Any] | None = None
     recommended_pipeline: str | None = None
     comparison_summary: str | None = None
+    ocr_provider_mode: str | None = None
+    vision_provider_mode: str | None = None
+    original_answer: str | None = None
+    answer_repaired: bool | None = None
+    repair_reason: str | None = None
+    ocr_original_answer: str | None = None
+    vision_original_answer: str | None = None
+    ocr_answer_repaired: bool | None = None
+    vision_answer_repaired: bool | None = None
+    ocr_repair_reason: str | None = None
+    vision_repair_reason: str | None = None

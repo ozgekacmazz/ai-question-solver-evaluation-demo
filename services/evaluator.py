@@ -4,6 +4,7 @@ from typing import Any
 
 import pandas as pd
 
+from services.llm_service import normalize_answer as normalize_llm_answer
 from services.solver_pipeline import solve_question_image
 
 
@@ -26,23 +27,7 @@ def load_ground_truth(path: str = "data/ground_truth.json") -> list[dict[str, An
 
 def normalize_answer(answer: str) -> str:
     """Normalize predicted answers for comparison."""
-    if not isinstance(answer, str):
-        return ""
-
-    normalized = answer.strip().upper()
-    if not normalized:
-        return ""
-
-    normalized = normalized.replace(",", " ").replace(".", " ")
-    tokens = normalized.split()
-    for token in tokens:
-        candidate = token.strip()
-        if candidate in {"A", "B", "C", "D", "E"}:
-            return candidate
-        if candidate.endswith(")") and candidate[:-1] in {"A", "B", "C", "D", "E"}:
-            return candidate[:-1]
-
-    return ""
+    return normalize_llm_answer(answer)
 
 
 def evaluate_answer(predicted_answer: str, correct_answer: str) -> dict[str, Any]:
@@ -50,7 +35,7 @@ def evaluate_answer(predicted_answer: str, correct_answer: str) -> dict[str, Any
     predicted_normalized = normalize_answer(predicted_answer)
     correct_normalized = normalize_answer(correct_answer)
     is_correct = bool(predicted_normalized and predicted_normalized == correct_normalized)
-    needs_manual_review = predicted_normalized == "" or not is_correct
+    needs_manual_review = predicted_normalized == "unknown" or not is_correct
 
     return {
         "predicted_normalized": predicted_normalized,
@@ -96,6 +81,14 @@ def evaluate_question(record: dict[str, Any], mode: str = "both") -> dict[str, A
             "error": str(exc),
             "confidence": 0.0,
             "ocr_text": "",
+            "ocr_raw_response": "",
+            "vision_raw_response": "",
+            "ocr_original_answer": "",
+            "vision_original_answer": "",
+            "ocr_answer_repaired": False,
+            "vision_answer_repaired": False,
+            "ocr_repair_reason": "",
+            "vision_repair_reason": "",
         }
 
     predicted_answer = result.get("answer", "")
@@ -103,6 +96,16 @@ def evaluate_question(record: dict[str, Any], mode: str = "both") -> dict[str, A
     final_confidence = float(result.get("confidence", 0.0) or 0.0)
     ocr_confidence = float(_extract_pipeline_value(result, "ocr_pipeline_result", "confidence", 0.0) or 0.0)
     vision_confidence = float(_extract_pipeline_value(result, "vision_pipeline_result", "confidence", 0.0) or 0.0)
+    ocr_llm_result = _extract_pipeline_value(result, "ocr_pipeline_result", "llm_result", {})
+    vision_llm_result = _extract_pipeline_value(result, "vision_pipeline_result", "llm_result", {})
+    ocr_raw_response = ocr_llm_result.get("raw_response", "") if isinstance(ocr_llm_result, dict) else ""
+    vision_raw_response = vision_llm_result.get("raw_response", "") if isinstance(vision_llm_result, dict) else ""
+    ocr_original_answer = _extract_pipeline_value(result, "ocr_pipeline_result", "original_answer", "")
+    vision_original_answer = _extract_pipeline_value(result, "vision_pipeline_result", "original_answer", "")
+    ocr_answer_repaired = bool(_extract_pipeline_value(result, "ocr_pipeline_result", "answer_repaired", False))
+    vision_answer_repaired = bool(_extract_pipeline_value(result, "vision_pipeline_result", "answer_repaired", False))
+    ocr_repair_reason = _extract_pipeline_value(result, "ocr_pipeline_result", "repair_reason", "")
+    vision_repair_reason = _extract_pipeline_value(result, "vision_pipeline_result", "repair_reason", "")
 
     return {
         "id": question_id,
@@ -119,6 +122,14 @@ def evaluate_question(record: dict[str, Any], mode: str = "both") -> dict[str, A
         "ocr_confidence": ocr_confidence,
         "vision_confidence": vision_confidence,
         "final_confidence": final_confidence,
+        "ocr_raw_response": ocr_raw_response,
+        "vision_raw_response": vision_raw_response,
+        "ocr_original_answer": ocr_original_answer,
+        "vision_original_answer": vision_original_answer,
+        "ocr_answer_repaired": ocr_answer_repaired,
+        "vision_answer_repaired": vision_answer_repaired,
+        "ocr_repair_reason": ocr_repair_reason,
+        "vision_repair_reason": vision_repair_reason,
         "status": result.get("status", "failed"),
         "error": result.get("error"),
         "confidence": final_confidence,
