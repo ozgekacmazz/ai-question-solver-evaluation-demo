@@ -19,7 +19,7 @@ def main() -> None:
 
     st.sidebar.header("Project status")
     st.sidebar.write("OCR preprocessing pipeline works.")
-    st.sidebar.write("Available modes: OCR, Vision, and Compare")
+    st.sidebar.write("Available modes: OCR, Vision, Compare, and Adaptive Auto")
     st.sidebar.info("No real API cost in mock mode.")
 
     uploaded_file = st.file_uploader(
@@ -41,13 +41,14 @@ def main() -> None:
     st.subheader("Pipeline mode")
     mode_label = st.selectbox(
         "Select pipeline",
-        ["OCR + LLM", "Direct Vision LLM", "Both / Compare"],
+        ["OCR + LLM", "Direct Vision LLM", "Both / Compare", "Adaptive Auto"],
         index=0,
     )
     mode_map = {
         "OCR + LLM": "ocr",
         "Direct Vision LLM": "vision",
         "Both / Compare": "both",
+        "Adaptive Auto": "adaptive",
     }
     mode = mode_map[mode_label]
 
@@ -65,7 +66,22 @@ def main() -> None:
         else:
             st.error("Failed to solve the question.")
 
-        if mode == "ocr":
+        router_decision = result.get("router_decision")
+        if result.get("adaptive_selected_mode") or isinstance(router_decision, dict):
+            st.subheader("Adaptive Router Decision")
+            st.write(f"**Selected mode:** {result.get('adaptive_selected_mode', '')}")
+            if isinstance(router_decision, dict):
+                st.write(f"**Detected subject:** {router_decision.get('detected_subject', '')}")
+                st.write(f"**Detected question type:** {router_decision.get('detected_question_type', '')}")
+                st.write(f"**Recommended mode:** {router_decision.get('recommended_mode', '')}")
+                st.write(f"**Reason:** {router_decision.get('reason', '')}")
+                router_confidence = router_decision.get("confidence")
+                if router_confidence is not None:
+                    st.metric("Router confidence", f"{router_confidence:.2f}")
+
+        display_mode = result.get("adaptive_selected_mode") if mode == "adaptive" else mode
+
+        if display_mode == "ocr":
             ocr_text = result.get("ocr_result", {}).get("text", "")
             st.subheader("OCR Extracted Text")
             st.code(ocr_text or "(no text extracted)")
@@ -77,7 +93,7 @@ def main() -> None:
                 st.write(f"**Provider mode:** {result.get('provider_mode')}")
             st.metric("Confidence", f"{result.get('confidence', 0.0):.2f}")
 
-        elif mode == "vision":
+        elif display_mode == "vision":
             st.subheader("Vision Result")
             st.write(f"**Answer:** {result.get('answer', '')}")
             st.write(f"**Explanation:** {result.get('explanation', '')}")
