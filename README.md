@@ -9,6 +9,8 @@ This project compares two approaches for solving question images:
 
 The project also includes **Both / Compare** mode, which runs both pipelines and recommends the more reliable result based on answer quality and confidence.
 
+Additional modes include **Adaptive Auto**, which chooses a pipeline from OCR text signals, and **OCR + Langflow**, which can send OCR text to an optional Langflow flow when configured.
+
 ## Why This Project Exists
 
 Question images are not always plain text. They may include mathematical expressions, tables, charts, geometry diagrams, noisy scans, or mixed visual reasoning.
@@ -61,6 +63,7 @@ The latest reliability pass added strict JSON handling, answer normalization, OC
 - Langflow integration prepared and disabled by default
 - Sample smoke-test dataset
 - Advanced benchmark dataset
+- Expanded synthetic dataset
 - Batch evaluation workflow
 - Pytest test suite
 
@@ -72,6 +75,7 @@ The latest reliability pass added strict JSON handling, answer normalization, OC
 - `scripts/`: dataset generation and evaluation scripts.
 - `data/sample_questions/`: basic smoke-test question images.
 - `data/benchmark_questions/`: harder benchmark question images.
+- `data/expanded_questions/`: expanded synthetic question images.
 - `tests/`: automated test suite.
 - `configs/`: example LiteLLM configuration.
 - `langflow/`: Langflow notes and integration material.
@@ -117,6 +121,14 @@ Includes:
 
 Purpose: more realistic and harder model evaluation with real API mode.
 
+### Expanded Synthetic Dataset
+
+Located at `data/expanded_questions/`.
+
+Includes original synthetic questions `q17` through `q50` covering Turkish-style reading, social studies, math, calculus, geometry, charts, tables, science, noisy text, and mixed visual reasoning.
+
+Purpose: broader repo-safe evaluation without using Kaggle, OSYM, YKS, copyrighted exam questions, or external datasets.
+
 ## Setup
 
 Create and activate a virtual environment:
@@ -158,6 +170,8 @@ The `/solve` endpoint accepts an uploaded image and supports:
 - `mode=ocr`
 - `mode=vision`
 - `mode=both`
+- `mode=adaptive`
+- `mode=ocr_langflow`
 
 ## Running the Streamlit UI
 
@@ -172,6 +186,8 @@ The UI lets you upload a question image and choose one of:
 - OCR + LLM
 - Direct Vision LLM
 - Both / Compare
+- Adaptive Auto
+- OCR + Langflow
 
 ## Generating Question Images
 
@@ -185,6 +201,12 @@ Generate the advanced benchmark dataset:
 
 ```powershell
 python scripts/create_benchmark_questions.py
+```
+
+Generate the expanded synthetic dataset:
+
+```powershell
+python scripts/create_expanded_questions.py
 ```
 
 ## Running Evaluation
@@ -201,7 +223,13 @@ Evaluate the benchmark dataset:
 python scripts/run_evaluation.py --dataset benchmark
 ```
 
-Evaluate both datasets:
+Evaluate the expanded synthetic dataset:
+
+```powershell
+python scripts/run_evaluation.py --dataset expanded
+```
+
+Evaluate all configured datasets:
 
 ```powershell
 python scripts/run_evaluation.py --dataset all

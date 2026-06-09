@@ -1,0 +1,342 @@
+[
+  {
+    "id": "q17",
+    "question_id": "q17",
+    "image_path": "data/expanded_questions/q17_turkish_paragraph.png",
+    "question_type": "turkish",
+    "difficulty": "expanded",
+    "correct_answer": "B",
+    "expected_reasoning": "The paragraph says the person reads books every morning.",
+    "notes": "Original Turkish paragraph-style text question."
+  },
+  {
+    "id": "q18",
+    "question_id": "q18",
+    "image_path": "data/expanded_questions/q18_turkish_sentence_meaning.png",
+    "question_type": "turkish",
+    "difficulty": "expanded",
+    "correct_answer": "A",
+    "expected_reasoning": "The sentence emphasizes using time well and planning ahead.",
+    "notes": "Sentence meaning question."
+  },
+  {
+    "id": "q19",
+    "question_id": "q19",
+    "image_path": "data/expanded_questions/q19_turkish_inference.png",
+    "question_type": "turkish",
+    "difficulty": "expanded",
+    "correct_answer": "B",
+    "expected_reasoning": "Taking an umbrella when seeing rain shows preparation.",
+    "notes": "Inference question."
+  },
+  {
+    "id": "q20",
+    "question_id": "q20",
+    "image_path": "data/expanded_questions/q20_history_text.png",
+    "question_type": "social",
+    "difficulty": "expanded",
+    "correct_answer": "A",
+    "expected_reasoning": "Written records are evidence used in history.",
+    "notes": "History text question."
+  },
+  {
+    "id": "q21",
+    "question_id": "q21",
+    "image_path": "data/expanded_questions/q21_geography_text.png",
+    "question_type": "social",
+    "difficulty": "expanded",
+    "correct_answer": "A",
+    "expected_reasoning": "Little rain and sparse plants describe desert conditions.",
+    "notes": "Geography text question."
+  },
+  {
+    "id": "q22",
+    "question_id": "q22",
+    "image_path": "data/expanded_questions/q22_social_reasoning.png",
+    "question_type": "social",
+    "difficulty": "expanded",
+    "correct_answer": "B",
+    "expected_reasoning": "Voting is a form of participation.",
+    "notes": "Social reasoning question."
+  },
+  {
+    "id": "q23",
+    "question_id": "q23",
+    "image_path": "data/expanded_questions/q23_math_word_problem.png",
+    "question_type": "math",
+    "difficulty": "expanded",
+    "correct_answer": "D",
+    "expected_reasoning": "8 + 7 = 15.",
+    "notes": "Simple word problem."
+  },
+  {
+    "id": "q24",
+    "question_id": "q24",
+    "image_path": "data/expanded_questions/q24_math_ratio.png",
+    "question_type": "math",
+    "difficulty": "expanded",
+    "correct_answer": "D",
+    "expected_reasoning": "Multiplying the ratio by 3 gives 6 red and 9 blue.",
+    "notes": "Ratio question."
+  },
+  {
+    "id": "q25",
+    "question_id": "q25",
+    "image_path": "data/expanded_questions/q25_math_equation.png",
+    "question_type": "equation",
+    "difficulty": "expanded",
+    "correct_answer": "C",
+    "expected_reasoning": "3x = 21, so x = 7.",
+    "notes": "Linear equation."
+  },
+  {
+    "id": "q26",
+    "question_id": "q26",
+    "image_path": "data/expanded_questions/q26_math_percentage.png",
+    "question_type": "math",
+    "difficulty": "expanded",
+    "correct_answer": "C",
+    "expected_reasoning": "One quarter of 80 is 20.",
+    "notes": "Percentage question."
+  },
+  {
+    "id": "q27",
+    "question_id": "q27",
+    "image_path": "data/expanded_questions/q27_function_value.png",
+    "question_type": "algebra",
+    "difficulty": "expanded",
+    "correct_answer": "D",
+    "expected_reasoning": "f(4) = 2 * 4 + 3 = 11.",
+    "notes": "Function value."
+  },
+  {
+    "id": "q28",
+    "question_id": "q28",
+    "image_path": "data/expanded_questions/q28_limit_text.png",
+    "question_type": "calculus",
+    "difficulty": "expanded",
+    "correct_answer": "C",
+    "expected_reasoning": "Substitute x = 2 into x + 3 to get 5.",
+    "notes": "Limit text question."
+  },
+  {
+    "id": "q29",
+    "question_id": "q29",
+    "image_path": "data/expanded_questions/q29_derivative_text.png",
+    "question_type": "calculus",
+    "difficulty": "expanded",
+    "correct_answer": "D",
+    "expected_reasoning": "f'(x) = 2x, so f'(3) = 6.",
+    "notes": "Derivative text question."
+  },
+  {
+    "id": "q30",
+    "question_id": "q30",
+    "image_path": "data/expanded_questions/q30_integral_text.png",
+    "question_type": "calculus",
+    "difficulty": "expanded",
+    "correct_answer": "A",
+    "expected_reasoning": "The antiderivative of constant 4 is 4x + C.",
+    "notes": "Integral text question."
+  },
+  {
+    "id": "q31",
+    "question_id": "q31",
+    "image_path": "data/expanded_questions/q31_parabola_text.png",
+    "question_type": "algebra",
+    "difficulty": "expanded",
+    "correct_answer": "A",
+    "expected_reasoning": "Vertex form gives vertex (1, 2).",
+    "notes": "Parabola text question."
+  },
+  {
+    "id": "q32",
+    "question_id": "q32",
+    "image_path": "data/expanded_questions/q32_triangle_angle.png",
+    "question_type": "geometry",
+    "difficulty": "expanded",
+    "correct_answer": "C",
+    "expected_reasoning": "180 - 65 - 45 = 70.",
+    "notes": "Triangle visual."
+  },
+  {
+    "id": "q33",
+    "question_id": "q33",
+    "image_path": "data/expanded_questions/q33_circle_angle.png",
+    "question_type": "geometry",
+    "difficulty": "expanded",
+    "correct_answer": "C",
+    "expected_reasoning": "The central angle is labeled 80 degrees.",
+    "notes": "Circle visual."
+  },
+  {
+    "id": "q34",
+    "question_id": "q34",
+    "image_path": "data/expanded_questions/q34_rectangle_area.png",
+    "question_type": "geometry",
+    "difficulty": "expanded",
+    "correct_answer": "D",
+    "expected_reasoning": "9 * 4 = 36.",
+    "notes": "Rectangle area visual."
+  },
+  {
+    "id": "q35",
+    "question_id": "q35",
+    "image_path": "data/expanded_questions/q35_coordinate_geometry.png",
+    "question_type": "geometry",
+    "difficulty": "expanded",
+    "correct_answer": "B",
+    "expected_reasoning": "Point P is at x = 3 and y = 2.",
+    "notes": "Coordinate grid visual."
+  },
+  {
+    "id": "q36",
+    "question_id": "q36",
+    "image_path": "data/expanded_questions/q36_bar_chart_reasoning.png",
+    "question_type": "chart",
+    "difficulty": "expanded",
+    "correct_answer": "B",
+    "expected_reasoning": "Team Blue has value 8, the highest bar.",
+    "notes": "Bar chart visual."
+  },
+  {
+    "id": "q37",
+    "question_id": "q37",
+    "image_path": "data/expanded_questions/q37_line_chart_reasoning.png",
+    "question_type": "chart",
+    "difficulty": "expanded",
+    "correct_answer": "D",
+    "expected_reasoning": "Thursday has the highest value, 6.",
+    "notes": "Line chart visual."
+  },
+  {
+    "id": "q38",
+    "question_id": "q38",
+    "image_path": "data/expanded_questions/q38_table_reasoning.png",
+    "question_type": "table",
+    "difficulty": "expanded",
+    "correct_answer": "D",
+    "expected_reasoning": "The table shows B has 9.",
+    "notes": "Table reading visual."
+  },
+  {
+    "id": "q39",
+    "question_id": "q39",
+    "image_path": "data/expanded_questions/q39_pie_chart_reasoning.png",
+    "question_type": "chart",
+    "difficulty": "expanded",
+    "correct_answer": "B",
+    "expected_reasoning": "Music has the largest slice at 135 degrees.",
+    "notes": "Pie chart visual."
+  },
+  {
+    "id": "q40",
+    "question_id": "q40",
+    "image_path": "data/expanded_questions/q40_physics_force.png",
+    "question_type": "science",
+    "difficulty": "expanded",
+    "correct_answer": "C",
+    "expected_reasoning": "F = m * a = 3 * 2 = 6 N.",
+    "notes": "Physics force question."
+  },
+  {
+    "id": "q41",
+    "question_id": "q41",
+    "image_path": "data/expanded_questions/q41_physics_energy.png",
+    "question_type": "science",
+    "difficulty": "expanded",
+    "correct_answer": "B",
+    "expected_reasoning": "Lamps commonly produce light and heat.",
+    "notes": "Physics energy question."
+  },
+  {
+    "id": "q42",
+    "question_id": "q42",
+    "image_path": "data/expanded_questions/q42_chemistry_reaction.png",
+    "question_type": "science",
+    "difficulty": "expanded",
+    "correct_answer": "A",
+    "expected_reasoning": "Bubbles are evidence of gas formation.",
+    "notes": "Chemistry reaction question."
+  },
+  {
+    "id": "q43",
+    "question_id": "q43",
+    "image_path": "data/expanded_questions/q43_biology_cell.png",
+    "question_type": "science",
+    "difficulty": "expanded",
+    "correct_answer": "B",
+    "expected_reasoning": "The nucleus contains genetic material and controls cell activities.",
+    "notes": "Biology cell question."
+  },
+  {
+    "id": "q44",
+    "question_id": "q44",
+    "image_path": "data/expanded_questions/q44_mixed_math_visual.png",
+    "question_type": "mixed",
+    "difficulty": "expanded",
+    "correct_answer": "C",
+    "expected_reasoning": "3 boxes of 5 plus 4 loose pens gives 19.",
+    "notes": "Mixed visual arithmetic."
+  },
+  {
+    "id": "q45",
+    "question_id": "q45",
+    "image_path": "data/expanded_questions/q45_noisy_turkish.png",
+    "question_type": "noisy_text",
+    "difficulty": "expanded",
+    "correct_answer": "B",
+    "expected_reasoning": "The text asks what Kerem reads every evening: a story.",
+    "notes": "Noisy Turkish-style text."
+  },
+  {
+    "id": "q46",
+    "question_id": "q46",
+    "image_path": "data/expanded_questions/q46_noisy_math.png",
+    "question_type": "noisy_text",
+    "difficulty": "expanded",
+    "correct_answer": "D",
+    "expected_reasoning": "18 - 6 = 12.",
+    "notes": "Noisy math text."
+  },
+  {
+    "id": "q47",
+    "question_id": "q47",
+    "image_path": "data/expanded_questions/q47_low_contrast_text.png",
+    "question_type": "low_contrast_text",
+    "difficulty": "expanded",
+    "correct_answer": "C",
+    "expected_reasoning": "6 + 4 = 10.",
+    "notes": "Low contrast text image."
+  },
+  {
+    "id": "q48",
+    "question_id": "q48",
+    "image_path": "data/expanded_questions/q48_multi_step_problem.png",
+    "question_type": "math",
+    "difficulty": "expanded",
+    "correct_answer": "C",
+    "expected_reasoning": "3 * 5 = 15 and 2 * 2 = 4, so total is 19.",
+    "notes": "Multi-step arithmetic."
+  },
+  {
+    "id": "q49",
+    "question_id": "q49",
+    "image_path": "data/expanded_questions/q49_visual_table_math.png",
+    "question_type": "table",
+    "difficulty": "expanded",
+    "correct_answer": "C",
+    "expected_reasoning": "Two student tickets cost 2 * 6 = 12.",
+    "notes": "Table plus arithmetic."
+  },
+  {
+    "id": "q50",
+    "question_id": "q50",
+    "image_path": "data/expanded_questions/q50_adaptive_ambiguous.png",
+    "question_type": "mixed",
+    "difficulty": "expanded",
+    "correct_answer": "C",
+    "expected_reasoning": "Row B value 7 plus 5 is 12.",
+    "notes": "Ambiguous text mentioning table and calculation."
+  }
+]

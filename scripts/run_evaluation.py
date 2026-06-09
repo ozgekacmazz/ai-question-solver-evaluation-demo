@@ -21,6 +21,10 @@ DATASET_CONFIGS = {
         "ground_truth_path": "data/benchmark_ground_truth.json",
         "output_csv_path": "outputs/benchmark_results.csv",
     },
+    "expanded": {
+        "ground_truth_path": "data/expanded_ground_truth.json",
+        "output_csv_path": "outputs/expanded_results.csv",
+    },
 }
 
 
@@ -29,9 +33,10 @@ def get_dataset_configs(dataset: str) -> list[dict[str, str]]:
         return [
             DATASET_CONFIGS["sample"],
             DATASET_CONFIGS["benchmark"],
+            DATASET_CONFIGS["expanded"],
         ]
     if dataset not in DATASET_CONFIGS:
-        raise ValueError("Dataset must be one of: sample, benchmark, all.")
+        raise ValueError("Dataset must be one of: sample, benchmark, expanded, all.")
     return [DATASET_CONFIGS[dataset]]
 
 
@@ -59,7 +64,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run question-solver evaluation.")
     parser.add_argument(
         "--dataset",
-        choices=["sample", "benchmark", "all"],
+        choices=["sample", "benchmark", "expanded", "all"],
         default="sample",
         help="Dataset to evaluate. Default: sample.",
     )

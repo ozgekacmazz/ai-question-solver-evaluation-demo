@@ -118,6 +118,128 @@ def test_mock_text_rules_return_B_for_known_patterns(monkeypatch) -> None:
         assert result["confidence"] > 0
 
 
+def test_mock_text_rules_solve_expanded_turkish_and_social_patterns(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+
+    examples = [
+        (
+            "Paragrafta anlatilan kisi her sabah kitap okur. Bu kisinin en belirgin aliskanligi hangisidir?\n"
+            "A) Spor yapmak\nB) Kitap okumak\nC) Resim cizmek\nD) Sarki soylemek\nE) Yolculuk yapmak",
+            "B",
+        ),
+        (
+            "'Zamanini iyi kullanan ogrenci islerini son gune birakmaz.' cumlesinde vurgulanan dusunce hangisidir?\n"
+            "A) Planli olmak\nB) Hizli kosmak\nC) Sessiz kalmak\nD) Cok uyumak\nE) Oyun oynamak",
+            "A",
+        ),
+        (
+            "A region receives little rain and has very sparse plants. Which climate description best fits this region?\n"
+            "A) Desert\nB) Rain forest\nC) Tundra\nD) Oceanic\nE) Mountain",
+            "A",
+        ),
+    ]
+
+    for text, expected_answer in examples:
+        result = solve_text_question(text)
+        assert result["status"] == "success"
+        assert result["answer"] == expected_answer
+        assert result["confidence"] > 0
+
+
+def test_mock_text_rules_solve_expanded_math_patterns(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+
+    examples = [
+        (
+            "The ratio of red beads to blue beads is 2 to 3. If there are 6 red beads, how many blue beads are there?\n"
+            "A) 6\nB) 7\nC) 8\nD) 9\nE) 12",
+            "D",
+        ),
+        (
+            "Solve for x: 3x - 5 = 16\nA) 5\nB) 6\nC) 7\nD) 8\nE) 9",
+            "C",
+        ),
+        (
+            "If f(x) = x^2, what is f'(3)?\nA) 3\nB) 4\nC) 5\nD) 6\nE) 9",
+            "D",
+        ),
+        (
+            "What is the integral of 4 dx?\nA) 4x + C\nB) x^4 + C\nC) 4 + C\nD) 2x + C\nE) x + C",
+            "A",
+        ),
+    ]
+
+    for text, expected_answer in examples:
+        result = solve_text_question(text)
+        assert result["status"] == "success"
+        assert result["answer"] == expected_answer
+        assert result["confidence"] > 0
+
+
+def test_mock_text_rules_tolerate_common_ocr_math_artifacts(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+
+    examples = [
+        (
+            "If f(x) = 2x + 3, what is (4)?\nA)8\nB)9\nC)10\nD)11\nE)12",
+            "D",
+        ),
+        (
+            "The parabola y = (x - 1)42 + 2 has vertex at which point?\n"
+            "A) (1, 2)\nB) (2, 1)\nC) (-1, 2)\nD) (1, -2)\nE) (0, 2)",
+            "A",
+        ),
+        (
+            "A cart with mass 3 kg accelerates at 2 m/s*2. What is the net force?\n"
+            "A)4N\nB)SN\nC)EN\nD)8N\nE)10N",
+            "C",
+        ),
+    ]
+
+    for text, expected_answer in examples:
+        result = solve_text_question(text)
+        assert result["status"] == "success"
+        assert result["answer"] == expected_answer
+        assert result["confidence"] > 0
+
+
+def test_mock_text_rules_solve_expanded_chart_table_and_science_patterns(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+
+    examples = [
+        (
+            "Team Points Red 5 Blue 8 Green 6 Which team has the highest number of points?\n"
+            "A) Red\nB) Blue\nC) Green\nD) Yellow\nE) All equal",
+            "B",
+        ),
+        (
+            "Score Table Name Score A 4 B 9 C 6 Which row has the score 9?\n"
+            "A) Row A\nB) Row C\nC) No row\nD) Row B\nE) All rows",
+            "D",
+        ),
+        (
+            "A cart with mass 3 kg accelerates at 2 m/s^2. What is the net force?\n"
+            "A) 4 N\nB) 5 N\nC) 6 N\nD) 8 N\nE) 10 N",
+            "C",
+        ),
+    ]
+
+    for text, expected_answer in examples:
+        result = solve_text_question(text)
+        assert result["status"] == "success"
+        assert result["answer"] == expected_answer
+        assert result["confidence"] > 0
+
+
+def test_unknown_mock_question_does_not_echo_options_in_raw_response(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+
+    result = solve_text_question("Unclear prompt.\nA) First\nB) Second\nC) Third\nD) Fourth\nE) Fifth")
+
+    assert result["answer"] == "unknown"
+    assert result["raw_response"] == ""
+
+
 def test_parse_llm_response_json() -> None:
     result = parse_llm_response('{"answer": "B", "explanation": "6 is option B.", "confidence": 0.84}')
 
