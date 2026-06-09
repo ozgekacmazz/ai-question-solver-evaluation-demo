@@ -36,3 +36,5 @@ class SolveResponse(BaseModel):
     vision_answer_repaired: bool | None = None
     ocr_repair_reason: str | None = None
     vision_repair_reason: str | None = None
+    router_decision: dict[str, Any] | None = None
+    adaptive_selected_mode: str | None = None

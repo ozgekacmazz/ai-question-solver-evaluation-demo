@@ -1,5 +1,6 @@
 from typing import Any, Dict
 
+from services.adaptive_router import decide_pipeline
 from services.llm_service import (
     normalize_answer,
     repair_llm_result_with_options,
@@ -101,6 +102,51 @@ def run_ocr_llm_pipeline(image_path: str) -> Dict[str, Any]:
     return _build_pipeline_result("ocr_llm", image_path, ocr_result, llm_result, text)
 
 
+def run_adaptive_pipeline(image_path: str) -> Dict[str, Any]:
+    """Run OCR once, then route to the safest available solve pipeline."""
+    ocr_result = ocr_question(image_path)
+    text = ocr_result.get("text", "")
+    ocr_confidence = ocr_result.get("confidence")
+    router_decision = decide_pipeline(text, ocr_confidence)
+    selected_mode = router_decision.get("recommended_mode", "both")
+
+    if selected_mode == "ocr":
+        if ocr_result.get("status") != "success" or not text:
+            llm_result = {
+                "answer": "",
+                "solution": "",
+                "explanation": "",
+                "confidence": 0.0,
+                "raw_response": "",
+                "status": "failed",
+                "error": ocr_result.get("error", "OCR step failed."),
+                "latency_ms": 0,
+                "provider_mode": "",
+            }
+            result = _build_pipeline_result("adaptive_ocr_llm", image_path, ocr_result, llm_result, text)
+        else:
+            llm_result = solve_text_question(text)
+            result = _build_pipeline_result("adaptive_ocr_llm", image_path, ocr_result, llm_result, text)
+
+        result["router_decision"] = router_decision
+        result["adaptive_selected_mode"] = "ocr"
+        return result
+
+    if selected_mode == "vision":
+        result = dict(run_vision_llm_pipeline(image_path))
+        result["pipeline"] = "adaptive_vision_llm"
+        result["router_decision"] = router_decision
+        result["adaptive_selected_mode"] = "vision"
+        result["recommended_pipeline"] = "vision_llm"
+        return result
+
+    result = dict(run_both_pipelines(image_path))
+    result["pipeline"] = "adaptive_both"
+    result["router_decision"] = router_decision
+    result["adaptive_selected_mode"] = "both"
+    return result
+
+
 def solve_question_image(image_path: str, mode: str = "ocr") -> Dict[str, Any]:
     """Solve an uploaded question image using the requested pipeline mode."""
     if mode == "ocr":
@@ -112,6 +158,9 @@ def solve_question_image(image_path: str, mode: str = "ocr") -> Dict[str, Any]:
     if mode == "both":
         return run_both_pipelines(image_path)
 
+    if mode == "adaptive":
+        return run_adaptive_pipeline(image_path)
+
     return {
         "pipeline": mode,
         "image_path": image_path,
@@ -122,7 +171,7 @@ def solve_question_image(image_path: str, mode: str = "ocr") -> Dict[str, Any]:
         "explanation": "",
         "confidence": 0.0,
         "status": "failed",
-        "error": f"Unsupported mode: {mode}. Supported modes are: ocr, vision, both.",
+        "error": f"Unsupported mode: {mode}. Supported modes are: ocr, vision, both, adaptive.",
         "provider_mode": "",
     }
 

@@ -27,11 +27,11 @@ def solve_question(
     mode: str = Form("ocr"),
 ) -> Any:
     """Solve a question image with the configured pipeline."""
-    supported_modes = {"ocr", "vision", "both"}
+    supported_modes = {"ocr", "vision", "both", "adaptive"}
     if mode not in supported_modes:
         raise HTTPException(
             status_code=400,
-            detail="Unsupported mode. Supported modes are: ocr, vision, both.",
+            detail="Unsupported mode. Supported modes are: ocr, vision, both, adaptive.",
         )
 
     uploads_dir = Path("uploads")

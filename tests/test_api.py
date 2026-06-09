@@ -106,6 +106,45 @@ def test_solve_endpoint_accepts_both_mode_in_mock_mode(monkeypatch) -> None:
     assert data["comparison_summary"]
 
 
+def test_solve_endpoint_accepts_adaptive_mode_in_mock_mode(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+
+    def mock_solve_question_image(image_path: str, mode: str = "ocr") -> dict:
+        return {
+            "pipeline": "adaptive_ocr_llm",
+            "image_path": image_path,
+            "ocr_result": {"text": "What is 2 + 2?", "status": "success"},
+            "llm_result": {"status": "success"},
+            "answer": "B",
+            "solution": "B",
+            "explanation": "Adaptive selected OCR.",
+            "confidence": 0.95,
+            "status": "success",
+            "error": None,
+            "router_decision": {"recommended_mode": "ocr"},
+            "adaptive_selected_mode": "ocr",
+        }
+
+    monkeypatch.setattr("app.main.solve_question_image", mock_solve_question_image)
+
+    image = Image.new("RGB", (640, 240), color="white")
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    response = client.post(
+        "/solve",
+        files={"image": ("question.png", buffer, "image/png")},
+        data={"mode": "adaptive"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["pipeline"].startswith("adaptive")
+    assert data["router_decision"]["recommended_mode"] == "ocr"
+    assert data["adaptive_selected_mode"] == "ocr"
+
+
 def test_solve_endpoint_unsupported_mode_returns_error() -> None:
     image = Image.new("RGB", (640, 240), color="white")
     buffer = BytesIO()
@@ -119,4 +158,4 @@ def test_solve_endpoint_unsupported_mode_returns_error() -> None:
     )
 
     assert response.status_code == 400
-    assert "Supported modes are: ocr, vision, both" in response.json()["detail"]
+    assert "Supported modes are: ocr, vision, both, adaptive" in response.json()["detail"]
