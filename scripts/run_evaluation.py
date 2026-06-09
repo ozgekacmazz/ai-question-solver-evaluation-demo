@@ -51,7 +51,10 @@ def run_evaluation(dataset: str = "sample", mode: str = "both") -> tuple[list[di
     results = []
     for config in configs:
         records = load_ground_truth(config["ground_truth_path"])
-        results.extend(evaluate_question(record, mode=mode) for record in records)
+        for record in records:
+            result = evaluate_question(record, mode=mode)
+            result["evaluation_mode"] = mode
+            results.append(result)
 
     output_csv_path = get_output_csv_path(dataset)
     output_file = Path(output_csv_path)
@@ -68,12 +71,18 @@ def parse_args() -> argparse.Namespace:
         default="sample",
         help="Dataset to evaluate. Default: sample.",
     )
+    parser.add_argument(
+        "--mode",
+        choices=["ocr", "vision", "both", "adaptive", "ocr_langflow"],
+        default="both",
+        help="Evaluation solve mode. Default: both.",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    mode = "both"
+    mode = args.mode
     results, output_csv_path = run_evaluation(dataset=args.dataset, mode=mode)
     total = len(results)
     correct = sum(1 for item in results if item.get("is_correct"))

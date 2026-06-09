@@ -89,6 +89,10 @@ def evaluate_question(record: dict[str, Any], mode: str = "both") -> dict[str, A
             "vision_answer_repaired": False,
             "ocr_repair_reason": "",
             "vision_repair_reason": "",
+            "adaptive_selected_mode": "",
+            "adaptive_initial_mode": "",
+            "adaptive_fallback_mode": "",
+            "router_decision": "",
         }
 
     predicted_answer = result.get("answer", "")
@@ -130,6 +134,10 @@ def evaluate_question(record: dict[str, Any], mode: str = "both") -> dict[str, A
         "vision_answer_repaired": vision_answer_repaired,
         "ocr_repair_reason": ocr_repair_reason,
         "vision_repair_reason": vision_repair_reason,
+        "adaptive_selected_mode": result.get("adaptive_selected_mode", ""),
+        "adaptive_initial_mode": result.get("adaptive_initial_mode", ""),
+        "adaptive_fallback_mode": result.get("adaptive_fallback_mode", ""),
+        "router_decision": result.get("router_decision", ""),
         "status": result.get("status", "failed"),
         "error": result.get("error"),
         "confidence": final_confidence,

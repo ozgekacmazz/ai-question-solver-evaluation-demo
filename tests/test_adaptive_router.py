@@ -58,3 +58,34 @@ def test_empty_unknown_text_routes_to_both() -> None:
     assert result["recommended_mode"] == "both"
     assert result["detected_subject"] == "unknown"
     assert result["detected_question_type"] == "unknown"
+
+
+def test_turkish_inference_options_do_not_trigger_geometry_route() -> None:
+    result = decide_pipeline(
+        "Elif yagmuru gorunce semsiyesini cantasina koydu. Bu durumdan hangi sonuc cikarilir?\n"
+        "A) Hava sicaktir\n"
+        "B) Elif hazirliklidir\n"
+        "C) Canta bostur\n"
+        "D) Yol kisadir\n"
+        "E) Elif acikmistir",
+        ocr_confidence=0.9,
+    )
+
+    assert result["recommended_mode"] == "ocr"
+    assert result["detected_subject"] == "turkish"
+
+
+def test_social_question_option_geometry_does_not_trigger_visual_route() -> None:
+    result = decide_pipeline(
+        "A town council keeps written records of decisions so later generations can learn what happened. "
+        "This most directly helps which field?\n"
+        "A) History\n"
+        "B) Geometry\n"
+        "C) Music\n"
+        "D) Astronomy\n"
+        "E) Chemistry",
+        ocr_confidence=0.9,
+    )
+
+    assert result["recommended_mode"] == "ocr"
+    assert result["detected_subject"] == "social"

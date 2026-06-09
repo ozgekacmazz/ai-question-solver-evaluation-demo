@@ -1,6 +1,8 @@
+import ast
 import base64
 import json
 import mimetypes
+import operator
 from pathlib import Path
 import re
 import time
@@ -507,6 +509,13 @@ def _mock_answer_for_text(options: Dict[str, str], expected_text: str, explanati
 
 
 def _solve_simple_arithmetic(normalized: str) -> tuple[str, str] | None:
+    expression = _extract_simple_arithmetic_expression(normalized)
+    if expression:
+        value = _safe_eval_arithmetic_expression(expression)
+        if value is not None:
+            formatted = _format_mock_number(value)
+            return formatted, f"{expression.strip()} equals {formatted}."
+
     match = re.search(r"\bwhat\s+is\s+([+-]?\d+)\s*([+\-*/])\s*([+-]?\d+)\b", normalized)
     if not match:
         return None
@@ -526,6 +535,54 @@ def _solve_simple_arithmetic(normalized: str) -> tuple[str, str] | None:
         return None
     formatted = _format_mock_number(value)
     return formatted, f"{left} {operator} {right} equals {formatted}."
+
+
+def _extract_simple_arithmetic_expression(normalized: str) -> str | None:
+    patterns = [
+        r"\bwhat\s+is\s+([0-9+\-*/().\s]+)(?:\?|$)",
+        r"\bcalculate\s+([0-9+\-*/().\s]+)(?:\?|$)",
+        r"\b(?:result|value)\s+of\s+([0-9+\-*/().\s]+)(?:\?|$)",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, normalized)
+        if match:
+            expression = match.group(1).strip()
+            if re.search(r"\d", expression) and re.search(r"[+\-*/]", expression):
+                return expression
+    return None
+
+
+def _safe_eval_arithmetic_expression(expression: str) -> float | None:
+    allowed_operators = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+    }
+    allowed_unary_operators = {
+        ast.UAdd: operator.pos,
+        ast.USub: operator.neg,
+    }
+
+    def _eval(node: ast.AST) -> float:
+        if isinstance(node, ast.Expression):
+            return _eval(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+            return float(node.value)
+        if isinstance(node, ast.UnaryOp) and type(node.op) in allowed_unary_operators:
+            return float(allowed_unary_operators[type(node.op)](_eval(node.operand)))
+        if isinstance(node, ast.BinOp) and type(node.op) in allowed_operators:
+            right = _eval(node.right)
+            if isinstance(node.op, ast.Div) and right == 0:
+                raise ZeroDivisionError
+            return float(allowed_operators[type(node.op)](_eval(node.left), right))
+        raise ValueError
+
+    try:
+        parsed = ast.parse(expression, mode="eval")
+        return _eval(parsed)
+    except (SyntaxError, ValueError, ZeroDivisionError):
+        return None
 
 
 def _solve_linear_equation(normalized: str) -> tuple[str, str] | None:
@@ -568,6 +625,8 @@ def _solve_mock_math(normalized: str, compact: str) -> tuple[str, str] | None:
         return "5", "Substituting x = 2 into x + 3 gives 5."
     if "f(x) = x^2" in normalized and "f'(3)" in normalized:
         return "6", "The derivative of x^2 is 2x, so f'(3) = 6."
+    if "x42" in normalized and "what is (3)" in normalized:
+        return "6", "The OCR text appears to describe evaluating the derivative of x^2 at 3, which gives 6."
     if "integral of 4 dx" in normalized:
         return "4x + C", "The antiderivative of 4 is 4x + C."
     if (

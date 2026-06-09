@@ -118,6 +118,32 @@ def test_mock_text_rules_return_B_for_known_patterns(monkeypatch) -> None:
         assert result["confidence"] > 0
 
 
+def test_mock_text_solves_chained_arithmetic_and_maps_to_option(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+
+    result = solve_text_question("What is 12/3 + 2?\nA)4\nB) 6\nC)8")
+
+    assert result["status"] == "success"
+    assert result["answer"] == "B"
+    assert "equals 6" in result["explanation"]
+
+
+def test_mock_text_solves_basic_arithmetic_operations_from_options(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+
+    examples = [
+        ("What is 7 + 5?\nA) 10\nB) 11\nC) 12", "C"),
+        ("What is 18 - 6?\nA) 8\nB) 10\nC) 12", "C"),
+        ("What is 4 * 3?\nA) 7\nB) 12\nC) 16", "B"),
+        ("What is 20 / 5?\nA) 4\nB) 5\nC) 10", "A"),
+    ]
+
+    for text, expected_answer in examples:
+        result = solve_text_question(text)
+        assert result["status"] == "success"
+        assert result["answer"] == expected_answer
+
+
 def test_mock_text_rules_solve_expanded_turkish_and_social_patterns(monkeypatch) -> None:
     monkeypatch.setattr(settings, "llm_mock_mode", True)
 

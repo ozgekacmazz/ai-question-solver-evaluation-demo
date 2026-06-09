@@ -144,6 +144,39 @@ def run_ocr_langflow_pipeline(image_path: str) -> Dict[str, Any]:
     return result
 
 
+def _build_adaptive_ocr_result(image_path: str, ocr_result: Dict[str, Any], text: str) -> Dict[str, Any]:
+    if ocr_result.get("status") != "success" or not text:
+        llm_result = {
+            "answer": "",
+            "solution": "",
+            "explanation": "",
+            "confidence": 0.0,
+            "raw_response": "",
+            "status": "failed",
+            "error": ocr_result.get("error", "OCR step failed."),
+            "latency_ms": 0,
+            "provider_mode": "",
+        }
+    else:
+        llm_result = solve_text_question(text)
+
+    return _build_pipeline_result("adaptive_ocr_llm", image_path, ocr_result, llm_result, text)
+
+
+def _with_adaptive_metadata(
+    result: Dict[str, Any],
+    router_decision: Dict[str, Any],
+    initial_mode: str,
+    selected_mode: str,
+    fallback_mode: str = "",
+) -> Dict[str, Any]:
+    result["router_decision"] = router_decision
+    result["adaptive_initial_mode"] = initial_mode
+    result["adaptive_selected_mode"] = selected_mode
+    result["adaptive_fallback_mode"] = fallback_mode
+    return result
+
+
 def run_adaptive_pipeline(image_path: str) -> Dict[str, Any]:
     """Run OCR once, then route to the safest available solve pipeline."""
     ocr_result = ocr_question(image_path)
@@ -153,40 +186,27 @@ def run_adaptive_pipeline(image_path: str) -> Dict[str, Any]:
     selected_mode = router_decision.get("recommended_mode", "both")
 
     if selected_mode == "ocr":
-        if ocr_result.get("status") != "success" or not text:
-            llm_result = {
-                "answer": "",
-                "solution": "",
-                "explanation": "",
-                "confidence": 0.0,
-                "raw_response": "",
-                "status": "failed",
-                "error": ocr_result.get("error", "OCR step failed."),
-                "latency_ms": 0,
-                "provider_mode": "",
-            }
-            result = _build_pipeline_result("adaptive_ocr_llm", image_path, ocr_result, llm_result, text)
-        else:
-            llm_result = solve_text_question(text)
-            result = _build_pipeline_result("adaptive_ocr_llm", image_path, ocr_result, llm_result, text)
-
-        result["router_decision"] = router_decision
-        result["adaptive_selected_mode"] = "ocr"
-        return result
+        result = _build_adaptive_ocr_result(image_path, ocr_result, text)
+        return _with_adaptive_metadata(result, router_decision, "ocr", "ocr")
 
     if selected_mode == "vision":
         result = dict(run_vision_llm_pipeline(image_path))
         result["pipeline"] = "adaptive_vision_llm"
-        result["router_decision"] = router_decision
-        result["adaptive_selected_mode"] = "vision"
         result["recommended_pipeline"] = "vision_llm"
+        result = _with_adaptive_metadata(result, router_decision, "vision", "vision")
+
+        if not _is_reliable_result(result) and text:
+            fallback_result = _build_adaptive_ocr_result(image_path, ocr_result, text)
+            if _is_reliable_result(fallback_result):
+                fallback_result["recommended_pipeline"] = "ocr_llm"
+                fallback_result["adaptive_initial_result"] = result
+                return _with_adaptive_metadata(fallback_result, router_decision, "vision", "ocr", "ocr")
+
         return result
 
     result = dict(run_both_pipelines(image_path))
     result["pipeline"] = "adaptive_both"
-    result["router_decision"] = router_decision
-    result["adaptive_selected_mode"] = "both"
-    return result
+    return _with_adaptive_metadata(result, router_decision, "both", "both")
 
 
 def solve_question_image(image_path: str, mode: str = "ocr") -> Dict[str, Any]:

@@ -173,6 +173,88 @@ def test_run_evaluation_dataset_configs_load_sample_and_benchmark() -> None:
     assert len(load_ground_truth(benchmark_config[0]["ground_truth_path"])) == 8
 
 
+def test_run_evaluation_forwards_cli_mode_and_writes_evaluation_mode(tmp_path: Path, monkeypatch) -> None:
+    import scripts.run_evaluation as run_evaluation_module
+
+    seen_modes = []
+
+    monkeypatch.setattr(
+        run_evaluation_module,
+        "load_ground_truth",
+        lambda path: [{"id": "q01", "image_path": "question.png", "correct_answer": "B"}],
+    )
+
+    def mock_evaluate_question(record: dict, mode: str = "both") -> dict:
+        seen_modes.append(mode)
+        return {
+            "id": record["id"],
+            "question_id": record["id"],
+            "predicted_answer": "B",
+            "is_correct": True,
+            "needs_manual_review": False,
+        }
+
+    monkeypatch.setattr(run_evaluation_module, "evaluate_question", mock_evaluate_question)
+    monkeypatch.setattr(
+        run_evaluation_module,
+        "get_output_csv_path",
+        lambda dataset: str(tmp_path / f"{dataset}_results.csv"),
+    )
+
+    results, output_csv_path = run_evaluation_module.run_evaluation(dataset="sample", mode="adaptive")
+
+    assert seen_modes == ["adaptive"]
+    assert results[0]["evaluation_mode"] == "adaptive"
+    df = pd.read_csv(output_csv_path)
+    assert "evaluation_mode" in df.columns
+    assert df.loc[0, "evaluation_mode"] == "adaptive"
+
+
+def test_evaluate_question_exports_adaptive_metadata(monkeypatch) -> None:
+    import services.evaluator as evaluator_module
+
+    def mock_solve_question_image(image_path: str, mode: str = "ocr") -> dict:
+        assert mode == "adaptive"
+        return {
+            "pipeline": "adaptive_ocr_llm",
+            "ocr_result": {"text": "What is 7 + 5?\nA) 10\nB) 11\nC) 12"},
+            "answer": "C",
+            "confidence": 0.88,
+            "status": "success",
+            "error": None,
+            "adaptive_selected_mode": "ocr",
+            "adaptive_initial_mode": "vision",
+            "adaptive_fallback_mode": "ocr",
+            "router_decision": {"recommended_mode": "vision"},
+        }
+
+    monkeypatch.setattr(evaluator_module, "solve_question_image", mock_solve_question_image)
+
+    result = evaluator_module.evaluate_question(
+        {"id": "q01", "image_path": "question.png", "question_type": "mixed", "correct_answer": "C"},
+        mode="adaptive",
+    )
+
+    assert result["adaptive_selected_mode"] == "ocr"
+    assert result["adaptive_initial_mode"] == "vision"
+    assert result["adaptive_fallback_mode"] == "ocr"
+    assert result["router_decision"] == {"recommended_mode": "vision"}
+
+
+def test_parse_args_accepts_mode(monkeypatch) -> None:
+    import scripts.run_evaluation as run_evaluation_module
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["run_evaluation.py", "--dataset", "expanded", "--mode", "adaptive"],
+    )
+
+    args = run_evaluation_module.parse_args()
+
+    assert args.dataset == "expanded"
+    assert args.mode == "adaptive"
+
+
 def test_benchmark_evaluation_runs_without_api_keys(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(settings, "llm_mock_mode", True)
     create_all_benchmark_questions(Path("data/benchmark_questions"))

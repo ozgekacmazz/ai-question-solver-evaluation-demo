@@ -319,6 +319,67 @@ def test_adaptive_routes_to_vision(monkeypatch) -> None:
     assert result["recommended_pipeline"] == "vision_llm"
     assert result["router_decision"] == router_decision
     assert result["adaptive_selected_mode"] == "vision"
+    assert result["adaptive_initial_mode"] == "vision"
+    assert result["adaptive_fallback_mode"] == ""
+
+
+def test_adaptive_falls_back_to_ocr_when_vision_is_unknown(monkeypatch) -> None:
+    router_decision = {
+        "detected_subject": "math",
+        "detected_question_type": "chart_table",
+        "recommended_mode": "vision",
+        "reason": "visual hint",
+        "confidence": 0.9,
+    }
+
+    def mock_ocr_question(image_path: str) -> dict:
+        return {
+            "text": "The question mentions a small table. If the value in row B is 7 and we add 5, what is the result?\n"
+            "A) 10\nB) 11\nC) 12\nD) 13\nE) 14",
+            "status": "success",
+            "error": None,
+        }
+
+    def mock_run_vision_llm_pipeline(image_path: str) -> dict:
+        return {
+            "pipeline": "vision_llm",
+            "image_path": image_path,
+            "ocr_result": {},
+            "llm_result": {"status": "success"},
+            "answer": "unknown",
+            "solution": "unknown",
+            "explanation": "Vision could not solve it.",
+            "confidence": 0.0,
+            "status": "success",
+            "error": None,
+        }
+
+    def mock_solve_text_question(text: str) -> dict:
+        return {
+            "answer": "C",
+            "solution": "C",
+            "explanation": "7 + 5 = 12.",
+            "confidence": 0.88,
+            "raw_response": "Answer: C",
+            "status": "success",
+            "error": None,
+            "provider_mode": "mock",
+        }
+
+    monkeypatch.setattr("services.solver_pipeline.ocr_question", mock_ocr_question)
+    monkeypatch.setattr("services.solver_pipeline.decide_pipeline", lambda text, confidence=None: router_decision)
+    monkeypatch.setattr("services.solver_pipeline.run_vision_llm_pipeline", mock_run_vision_llm_pipeline)
+    monkeypatch.setattr("services.solver_pipeline.solve_text_question", mock_solve_text_question)
+
+    result = run_adaptive_pipeline("question.png")
+
+    assert result["pipeline"] == "adaptive_ocr_llm"
+    assert result["answer"] == "C"
+    assert result["adaptive_initial_mode"] == "vision"
+    assert result["adaptive_selected_mode"] == "ocr"
+    assert result["adaptive_fallback_mode"] == "ocr"
+    assert result["router_decision"] == router_decision
+    assert result["adaptive_initial_result"]["answer"] == "unknown"
 
 
 def test_adaptive_routes_to_both(monkeypatch) -> None:
@@ -360,6 +421,7 @@ def test_adaptive_routes_to_both(monkeypatch) -> None:
     assert result["pipeline"] == "adaptive_both"
     assert result["router_decision"] == router_decision
     assert result["adaptive_selected_mode"] == "both"
+    assert result["adaptive_initial_mode"] == "both"
 
 
 def test_both_mode_does_not_recommend_agreement_when_both_unknown(monkeypatch) -> None:

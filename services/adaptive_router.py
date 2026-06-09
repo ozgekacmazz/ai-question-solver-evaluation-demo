@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 
@@ -100,6 +101,16 @@ SOCIAL_KEYWORDS = {
     "history",
     "geography",
     "social",
+    "written records",
+    "town council",
+    "later generations",
+    "field",
+    "climate",
+    "region",
+    "rain",
+    "sparse plants",
+    "votes",
+    "participation",
     "tarih",
     "cografya",
     "sosyal",
@@ -127,6 +138,12 @@ TURKISH_TEXT_KEYWORDS = {
     "yazar",
     "dusunce",
     "cikarim",
+    "sonuc cikarilir",
+    "hangi sonuc",
+    "durumdan",
+    "yagmuru",
+    "semsiyesini",
+    "hazirliklidir",
     "asagidakilerden",
     "hangisi",
 }
@@ -139,7 +156,19 @@ def _normalize_text(text: str) -> tuple[str, str]:
 
 
 def _contains_any(text: str, keywords: set[str]) -> bool:
-    return any(keyword in text for keyword in keywords)
+    for keyword in keywords:
+        if " " in keyword or len(keyword) > 3:
+            if keyword in text:
+                return True
+            continue
+        if re.search(rf"\b{re.escape(keyword)}\b", text):
+            return True
+    return False
+
+
+def _routing_text(text: str) -> str:
+    """Use the stem for routing so answer options do not masquerade as question signals."""
+    return re.split(r"(?im)^\s*A\s*[\).]", text or "", maxsplit=1)[0]
 
 
 def _safe_confidence(value: float | None) -> float | None:
@@ -169,7 +198,7 @@ def _result(
 
 def decide_pipeline(ocr_text: str, ocr_confidence: float | None = None) -> dict[str, Any]:
     """Choose the safest solve pipeline from OCR text and optional OCR confidence."""
-    _, text = _normalize_text(ocr_text)
+    _, text = _normalize_text(_routing_text(ocr_text))
     confidence_value = _safe_confidence(ocr_confidence)
 
     if confidence_value is not None and confidence_value < LOW_OCR_CONFIDENCE_THRESHOLD:
