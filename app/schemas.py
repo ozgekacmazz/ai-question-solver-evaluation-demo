@@ -38,3 +38,5 @@ class SolveResponse(BaseModel):
     vision_repair_reason: str | None = None
     router_decision: dict[str, Any] | None = None
     adaptive_selected_mode: str | None = None
+    langflow_status: str | None = None
+    langflow_error: str | None = None

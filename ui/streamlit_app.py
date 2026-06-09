@@ -19,7 +19,7 @@ def main() -> None:
 
     st.sidebar.header("Project status")
     st.sidebar.write("OCR preprocessing pipeline works.")
-    st.sidebar.write("Available modes: OCR, Vision, Compare, and Adaptive Auto")
+    st.sidebar.write("Available modes: OCR, Vision, Compare, Adaptive Auto, and Langflow")
     st.sidebar.info("No real API cost in mock mode.")
 
     uploaded_file = st.file_uploader(
@@ -41,7 +41,7 @@ def main() -> None:
     st.subheader("Pipeline mode")
     mode_label = st.selectbox(
         "Select pipeline",
-        ["OCR + LLM", "Direct Vision LLM", "Both / Compare", "Adaptive Auto"],
+        ["OCR + LLM", "Direct Vision LLM", "Both / Compare", "Adaptive Auto", "OCR + Langflow"],
         index=0,
     )
     mode_map = {
@@ -49,6 +49,7 @@ def main() -> None:
         "Direct Vision LLM": "vision",
         "Both / Compare": "both",
         "Adaptive Auto": "adaptive",
+        "OCR + Langflow": "ocr_langflow",
     }
     mode = mode_map[mode_label]
 
@@ -79,9 +80,16 @@ def main() -> None:
                 if router_confidence is not None:
                     st.metric("Router confidence", f"{router_confidence:.2f}")
 
+        if result.get("langflow_status") or result.get("langflow_error"):
+            st.subheader("Langflow Status")
+            if result.get("langflow_status"):
+                st.write(f"**Status:** {result.get('langflow_status')}")
+            if result.get("langflow_error"):
+                st.write(f"**Error:** {result.get('langflow_error')}")
+
         display_mode = result.get("adaptive_selected_mode") if mode == "adaptive" else mode
 
-        if display_mode == "ocr":
+        if display_mode in {"ocr", "ocr_langflow"}:
             ocr_text = result.get("ocr_result", {}).get("text", "")
             st.subheader("OCR Extracted Text")
             st.code(ocr_text or "(no text extracted)")

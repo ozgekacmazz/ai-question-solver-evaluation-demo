@@ -1,5 +1,6 @@
 from services.solver_pipeline import (
     run_adaptive_pipeline,
+    run_ocr_langflow_pipeline,
     run_ocr_llm_pipeline,
     run_vision_llm_pipeline,
     solve_question_image,
@@ -134,6 +135,111 @@ def test_solve_question_image_adaptive_mode_calls_adaptive_path(monkeypatch) -> 
 
     assert result["pipeline"] == "adaptive_ocr_llm"
     assert result["adaptive_selected_mode"] == "ocr"
+
+
+def test_solve_question_image_ocr_langflow_mode_calls_pipeline(monkeypatch) -> None:
+    def mock_run_ocr_langflow_pipeline(image_path: str) -> dict:
+        return {
+            "pipeline": "ocr_langflow",
+            "image_path": image_path,
+            "ocr_result": {"text": "What is 2 + 2?", "status": "success"},
+            "llm_result": {"status": "success"},
+            "answer": "B",
+            "solution": "B",
+            "explanation": "Langflow selected B.",
+            "confidence": 0.95,
+            "status": "success",
+            "error": None,
+            "provider_mode": "langflow",
+            "langflow_status": "success",
+            "langflow_error": None,
+        }
+
+    monkeypatch.setattr("services.solver_pipeline.run_ocr_langflow_pipeline", mock_run_ocr_langflow_pipeline)
+
+    result = solve_question_image("question.png", mode="ocr_langflow")
+
+    assert result["pipeline"] == "ocr_langflow"
+    assert result["provider_mode"] == "langflow"
+
+
+def test_ocr_langflow_success_calls_ocr_and_langflow(monkeypatch) -> None:
+    langflow_calls = []
+
+    def mock_ocr_question(image_path: str) -> dict:
+        return {"text": "What is 2 + 2?", "status": "success", "error": None}
+
+    def mock_run_text_solver_flow(question_text: str) -> dict:
+        langflow_calls.append(question_text)
+        return {
+            "answer": "B",
+            "explanation": "2 + 2 equals 4.",
+            "confidence": 0.94,
+            "raw_response": "Answer: B",
+            "status": "success",
+            "error": None,
+            "latency_ms": 1,
+        }
+
+    monkeypatch.setattr("services.solver_pipeline.ocr_question", mock_ocr_question)
+    monkeypatch.setattr("services.solver_pipeline.run_text_solver_flow", mock_run_text_solver_flow)
+
+    result = run_ocr_langflow_pipeline("question.png")
+
+    assert langflow_calls == ["What is 2 + 2?"]
+    assert result["pipeline"] == "ocr_langflow"
+    assert result["provider_mode"] == "langflow"
+    assert result["answer"] == "B"
+    assert result["langflow_status"] == "success"
+    assert result["langflow_error"] is None
+    assert result["recommended_pipeline"] == "ocr_langflow"
+
+
+def test_ocr_langflow_failed_langflow_result_is_safe(monkeypatch) -> None:
+    def mock_ocr_question(image_path: str) -> dict:
+        return {"text": "What is 2 + 2?", "status": "success", "error": None}
+
+    def mock_run_text_solver_flow(question_text: str) -> dict:
+        return {
+            "answer": "",
+            "explanation": "Langflow is not configured.",
+            "confidence": 0.0,
+            "raw_response": "",
+            "status": "failed",
+            "error": "Langflow is not configured.",
+            "latency_ms": 1,
+        }
+
+    monkeypatch.setattr("services.solver_pipeline.ocr_question", mock_ocr_question)
+    monkeypatch.setattr("services.solver_pipeline.run_text_solver_flow", mock_run_text_solver_flow)
+
+    result = run_ocr_langflow_pipeline("question.png")
+
+    assert result["pipeline"] == "ocr_langflow"
+    assert result["status"] == "failed"
+    assert result["provider_mode"] == "langflow"
+    assert result["langflow_status"] == "failed"
+    assert result["langflow_error"] == "Langflow is not configured."
+    assert result["error"] == "Langflow is not configured."
+
+
+def test_ocr_langflow_empty_ocr_text_does_not_call_langflow(monkeypatch) -> None:
+    def mock_ocr_question(image_path: str) -> dict:
+        return {"text": "", "status": "success", "error": None}
+
+    def mock_run_text_solver_flow(question_text: str) -> dict:
+        raise AssertionError("Langflow should not be called when OCR text is empty.")
+
+    monkeypatch.setattr("services.solver_pipeline.ocr_question", mock_ocr_question)
+    monkeypatch.setattr("services.solver_pipeline.run_text_solver_flow", mock_run_text_solver_flow)
+
+    result = run_ocr_langflow_pipeline("question.png")
+
+    assert result["pipeline"] == "ocr_langflow"
+    assert result["status"] == "failed"
+    assert result["provider_mode"] == "langflow"
+    assert result["ocr_text"] == ""
+    assert "ocr text is empty" in result["error"].lower()
 
 
 def test_adaptive_routes_to_ocr_without_duplicate_ocr(monkeypatch) -> None:
@@ -545,3 +651,4 @@ def test_solve_question_image_unsupported_mode_returns_failed_status() -> None:
     assert result["status"] == "failed"
     assert "supported modes" in result["error"].lower()
     assert "adaptive" in result["error"]
+    assert "ocr_langflow" in result["error"]

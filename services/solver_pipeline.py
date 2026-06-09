@@ -1,6 +1,7 @@
 from typing import Any, Dict
 
 from services.adaptive_router import decide_pipeline
+from services.langflow_client import run_text_solver_flow
 from services.llm_service import (
     normalize_answer,
     repair_llm_result_with_options,
@@ -102,6 +103,47 @@ def run_ocr_llm_pipeline(image_path: str) -> Dict[str, Any]:
     return _build_pipeline_result("ocr_llm", image_path, ocr_result, llm_result, text)
 
 
+def run_ocr_langflow_pipeline(image_path: str) -> Dict[str, Any]:
+    """Run OCR, then solve the extracted text through Langflow if available."""
+    ocr_result = ocr_question(image_path)
+    text = ocr_result.get("text", "")
+
+    if ocr_result.get("status") != "success" or not text:
+        error = "OCR text is empty or unavailable for Langflow solving."
+        if ocr_result.get("error"):
+            error = f"{error} OCR error: {ocr_result.get('error')}"
+        llm_result = {
+            "answer": "",
+            "solution": "",
+            "explanation": "",
+            "confidence": 0.0,
+            "raw_response": "",
+            "status": "failed",
+            "error": error,
+            "latency_ms": 0,
+            "provider_mode": "langflow",
+        }
+        result = _build_pipeline_result("ocr_langflow", image_path, ocr_result, llm_result, text)
+        result["ocr_text"] = text
+        result["ocr_raw_response"] = ocr_result
+        result["langflow_status"] = None
+        result["langflow_error"] = None
+        result["provider_mode"] = "langflow"
+        result["recommended_pipeline"] = "ocr_langflow"
+        return result
+
+    langflow_result = dict(run_text_solver_flow(text))
+    langflow_result["provider_mode"] = "langflow"
+    result = _build_pipeline_result("ocr_langflow", image_path, ocr_result, langflow_result, text)
+    result["ocr_text"] = text
+    result["ocr_raw_response"] = ocr_result
+    result["langflow_status"] = langflow_result.get("status")
+    result["langflow_error"] = langflow_result.get("error")
+    result["provider_mode"] = "langflow"
+    result["recommended_pipeline"] = "ocr_langflow"
+    return result
+
+
 def run_adaptive_pipeline(image_path: str) -> Dict[str, Any]:
     """Run OCR once, then route to the safest available solve pipeline."""
     ocr_result = ocr_question(image_path)
@@ -161,6 +203,9 @@ def solve_question_image(image_path: str, mode: str = "ocr") -> Dict[str, Any]:
     if mode == "adaptive":
         return run_adaptive_pipeline(image_path)
 
+    if mode == "ocr_langflow":
+        return run_ocr_langflow_pipeline(image_path)
+
     return {
         "pipeline": mode,
         "image_path": image_path,
@@ -171,7 +216,7 @@ def solve_question_image(image_path: str, mode: str = "ocr") -> Dict[str, Any]:
         "explanation": "",
         "confidence": 0.0,
         "status": "failed",
-        "error": f"Unsupported mode: {mode}. Supported modes are: ocr, vision, both, adaptive.",
+        "error": f"Unsupported mode: {mode}. Supported modes are: ocr, vision, both, adaptive, ocr_langflow.",
         "provider_mode": "",
     }
 
