@@ -31,6 +31,25 @@ OCR can be enough for text-heavy questions, especially when the scan is clear. V
    - Compare the results.
    - Recommend OCR, Vision, agreement between both, or no reliable answer.
 
+## Solving Modes and Latest Results
+
+The project compares three solving modes:
+
+- **OCR + Text LLM**
+- **Direct Vision / Multimodal LLM**
+- **Both / Compare**
+
+Mock mode is used for safe, repeatable infrastructure testing without API keys or provider costs. Real API mode is used for actual LiteLLM/OpenAI-compatible model testing.
+
+Latest real API evaluation with `LLM_MOCK_MODE=false` and `LLM_MODEL_NAME=openai/gpt-4.1-mini`:
+
+- **Sample dataset**: 8/8 correct, 100%
+- **Benchmark dataset**: 8/8 correct, 100%
+
+These results are from the included demo datasets only. They are useful for validating this project setup, but they are not a universal guarantee for arbitrary question images.
+
+The latest reliability pass added strict JSON handling, answer normalization, OCR option parsing, answer repair / verification logic, and provider mode visibility.
+
 ## Current Features
 
 - FastAPI backend
@@ -203,7 +222,7 @@ python -m pytest -q
 Latest known result:
 
 ```text
-62 passed, 1 warning
+96 passed, 1 warning
 ```
 
 ## Mock Mode vs Real API Mode
@@ -245,14 +264,14 @@ This allows future experiments with visual pipeline orchestration while keeping 
 - Vision mock mode works.
 - Both / Compare mode works.
 - Sample evaluation works in mock mode.
-- Benchmark evaluation is ready for real API testing.
-- Real model API testing is the next major step.
+- Real API evaluation works on the included sample and benchmark demo datasets.
+- Runtime CSV results are generated locally and should not be committed.
 
 ## Limitations
 
 - Mock mode does not represent real model intelligence.
 - OCR quality depends on Tesseract installation, scan quality, and preprocessing.
-- Benchmark accuracy must be measured with real multimodal and text models.
+- Real API accuracy depends on the selected model, prompt behavior, image quality, and dataset difficulty.
 - Generated images are controlled demo samples, not a full educational dataset.
 
 ## Future Work
