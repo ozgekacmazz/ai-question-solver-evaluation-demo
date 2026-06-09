@@ -253,9 +253,9 @@ Mock mode remains the recommended default for local setup, tests, and GitHub-saf
 
 ## Langflow Integration
 
-The Langflow client is prepared and disabled by default. It can be enabled later with `.env` settings such as `USE_LANGFLOW=true`, `LANGFLOW_URL`, `LANGFLOW_API_KEY`, and `LANGFLOW_FLOW_ID`.
+The Langflow client is integrated for the optional `mode=ocr_langflow` pipeline and is disabled by default. It can be enabled locally with `.env` settings such as `USE_LANGFLOW=true`, `LANGFLOW_URL`, `LANGFLOW_API_KEY`, and `LANGFLOW_FLOW_ID`.
 
-This allows future experiments with visual pipeline orchestration while keeping the core Python application usable without Langflow.
+This keeps the core Python application usable without Langflow. `mode=adaptive` currently routes among the existing local pipelines and can be extended later to prefer OCR + Langflow for text-heavy questions when configured.
 
 ## Current Status
 
