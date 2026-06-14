@@ -25,10 +25,16 @@ GEOMETRY_KEYWORDS = {
     "triangle",
     "angle",
     "circle",
+    "coordinate plane",
+    "coordinate",
     "rectangle",
     "square",
     "geometry",
     "shape",
+    "grid",
+    "point p",
+    "shown on the grid",
+    "diagram",
     "figure",
     "sekil",
     "ucgen",
@@ -45,7 +51,10 @@ CHART_TABLE_KEYWORDS = {
     "chart",
     "table",
     "bar chart",
+    "bar",
     "line graph",
+    "axis",
+    "team points",
     "grafik",
     "tablo",
     "sutun grafigi",
@@ -69,6 +78,7 @@ MATH_KEYWORDS = {
     "matematik",
     "equation",
     "denklem",
+    "how many",
     "sum",
     "toplam",
     "fraction",
@@ -76,6 +86,7 @@ MATH_KEYWORDS = {
     "number",
     "sayi",
     "calculate",
+    "more",
     "hesaplayiniz",
     "islem",
 }
@@ -196,6 +207,12 @@ def _result(
     }
 
 
+def _visual_mode(confidence_value: float | None) -> str:
+    if confidence_value is not None and confidence_value < 0.65:
+        return "both"
+    return "vision"
+
+
 def decide_pipeline(ocr_text: str, ocr_confidence: float | None = None) -> dict[str, Any]:
     """Choose the safest solve pipeline from OCR text and optional OCR confidence."""
     _, text = _normalize_text(_routing_text(ocr_text))
@@ -233,20 +250,22 @@ def decide_pipeline(ocr_text: str, ocr_confidence: float | None = None) -> dict[
     has_turkish_text = _contains_any(text, TURKISH_TEXT_KEYWORDS)
 
     if has_geometry:
+        recommended_mode = _visual_mode(confidence_value)
         return _result(
             "math",
             "geometry",
-            "vision",
+            recommended_mode,
             "Geometry or figure-related keywords suggest visual context is important.",
             0.92,
         )
 
     if has_chart_table:
         subject = "math" if has_math else "unknown"
+        recommended_mode = _visual_mode(confidence_value)
         return _result(
             subject,
             "chart_table",
-            "vision",
+            recommended_mode,
             "Graph, chart, or table keywords suggest the image layout matters.",
             0.92,
         )
