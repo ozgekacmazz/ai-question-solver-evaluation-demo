@@ -6,21 +6,38 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import streamlit as st
+from app.config import settings
 from services.solver_pipeline import solve_question_image
+
+
+def _project_status_messages() -> tuple[str, str]:
+    if settings.llm_mock_mode:
+        return (
+            "Mock mode is active. You can try the flow without API keys.",
+            "No real API cost in mock mode.",
+        )
+
+    return (
+        "Real provider mode is active. Requests may use API tokens.",
+        "Real API mode is active. Keep usage/cost under control.",
+    )
 
 
 def main() -> None:
     """Streamlit UI entry point for the evaluation demo."""
     st.title("AI Question Solver Evaluation Demo")
+    top_status, sidebar_status = _project_status_messages()
     st.info(
         "This demo compares AI-based approaches for solving question images. "
-        "Mock mode is enabled by default, so you can try the flow without API keys."
+        f"{top_status}"
     )
 
     st.sidebar.header("Project status")
     st.sidebar.write("OCR preprocessing pipeline works.")
     st.sidebar.write("Available modes: OCR, Vision, Compare, Adaptive Auto, and Langflow")
-    st.sidebar.info("No real API cost in mock mode.")
+    st.sidebar.info(sidebar_status)
+    if not settings.llm_mock_mode and settings.llm_model_name:
+        st.sidebar.write(f"Model: {settings.llm_model_name}")
 
     uploaded_file = st.file_uploader(
         "Upload a question image",
