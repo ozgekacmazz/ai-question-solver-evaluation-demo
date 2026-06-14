@@ -2,134 +2,138 @@
 
 ## Project Purpose
 
-This project compares two approaches for solving question images:
+This repository is a technical demo for evaluating an AI-powered question solving module. It compares several ways to solve question images, from OCR-based text extraction to direct multimodal model calls.
 
-- **OCR + Text LLM**: extract text from the image first, then solve the extracted question with a text language model.
-- **Direct Vision / Multimodal LLM**: send the image directly to a vision-capable language model.
+The project was built as a practical technical demo with a backend API, a Streamlit interface, synthetic evaluation datasets, batch evaluation scripts, and screenshots that document the current behavior.
 
-The project also includes **Both / Compare** mode, which runs both pipelines and recommends the more reliable result based on answer quality and confidence.
+This is not presented as a production-ready exam solver. It is a controlled demo for comparing how different pipelines behave on text-heavy, visual, noisy, and mixed question images.
 
-Additional modes include **Adaptive Auto**, which chooses a pipeline from OCR text signals, and **OCR + Langflow**, which can send OCR text to an optional Langflow flow when configured.
+## What Problem It Solves
 
-## Why This Project Exists
+Question images can contain plain text, formulas, tables, charts, geometry diagrams, or noisy scan artifacts. A single pipeline is not always best:
 
-Question images are not always plain text. They may include mathematical expressions, tables, charts, geometry diagrams, noisy scans, or mixed visual reasoning.
+- OCR works well when the question is mostly readable text.
+- Vision models are often better when the answer depends on visual layout, charts, grids, or geometry.
+- Comparing both pipelines can expose disagreement and make the final result easier to inspect.
+- An adaptive router can choose a pipeline automatically based on OCR signals.
 
-OCR can be enough for text-heavy questions, especially when the scan is clear. Vision models may be better for graph, geometry, chart, or image-heavy questions where important information is visual rather than textual. This project provides a small but practical framework for comparing those approaches.
+This project provides a small evaluation environment for comparing those tradeoffs.
 
-## Compared Pipelines
+## Main Features
 
-1. **OCR + LLM**
-   - Preprocess the image with OpenCV.
-   - Extract text with Tesseract OCR.
-   - Send the text to a mock or real text LLM.
+- FastAPI backend for image solving.
+- Streamlit web UI for manual testing.
+- OCR preprocessing pipeline.
+- Tesseract OCR integration.
+- LLM service with mock mode and real provider mode.
+- OpenAI-compatible real provider mode tested with `gpt-4.1-mini`.
+- Langflow OCR-text flow integration.
+- Adaptive router for selecting OCR, vision, or both.
+- Synthetic sample, expanded, benchmark, and realistic exam-style datasets.
+- Batch evaluation scripts that save CSV outputs.
+- Pytest coverage for routing, parsing, pipelines, API behavior, and evaluation.
 
-2. **Direct Vision LLM**
-   - Send the image directly to a mock or real multimodal LLM.
-   - Avoid relying on OCR text extraction.
+## Architecture Overview
+
+```text
+app/
+  FastAPI app, config, and response schemas
+
+services/
+  OCR, preprocessing, LLM calls, solver pipelines,
+  adaptive routing, evaluation, and Langflow client
+
+ui/
+  Streamlit app for upload-based manual testing
+
+scripts/
+  Dataset generation and evaluation scripts
+
+data/
+  Synthetic question images and ground truth JSON files
+
+langflow/
+  Local Langflow flow export and integration notes
+
+screenshots/
+  Evidence screenshots for UI, tests, evaluation, and Langflow
+
+outputs/
+  Local runtime CSV results and debug outputs
+```
+
+## Pipeline Modes
+
+The solver supports five modes:
+
+1. **OCR + Text LLM**
+   - Preprocesses the image.
+   - Extracts text with Tesseract.
+   - Sends the extracted text to the LLM service.
+
+2. **Vision / Multimodal LLM**
+   - Sends the image directly to a vision-capable provider.
+   - Useful when layout or diagrams matter.
 
 3. **Both / Compare**
-   - Run OCR + LLM and Direct Vision LLM.
-   - Compare the results.
-   - Recommend OCR, Vision, agreement between both, or no reliable answer.
+   - Runs OCR + Text LLM and Vision LLM.
+   - Compares answers and confidence.
+   - Reports the recommended pipeline.
 
-## Solving Modes and Latest Results
+4. **Adaptive Auto Router**
+   - Uses OCR text signals to decide between OCR, Vision, or Both.
+   - Prioritizes chart, graph, geometry, coordinate-plane, and table indicators before plain math routing.
 
-The project compares three solving modes:
+5. **OCR + Langflow**
+   - Sends extracted OCR text to a configured local Langflow flow.
+   - Useful for demonstrating an external visual workflow builder alongside the Python backend.
 
-- **OCR + Text LLM**
-- **Direct Vision / Multimodal LLM**
-- **Both / Compare**
+## Dataset Structure
 
-Mock mode is used for safe, repeatable infrastructure testing without API keys or provider costs. Real API mode is used for actual LiteLLM/OpenAI-compatible model testing.
+The datasets are synthetic and repo-safe. They are not copied from real LGS, YKS, OSYM, MEB, or other copyrighted exams.
 
-Latest real API evaluation with `LLM_MOCK_MODE=false` and `LLM_MODEL_NAME=openai/gpt-4.1-mini`:
+```text
+data/ground_truth.json
+data/sample_questions/
+```
 
-- **Sample dataset**: 8/8 correct, 100%
-- **Benchmark dataset**: 8/8 correct, 100%
+Small smoke-test dataset with 8 simple images.
 
-These results are from the included demo datasets only. They are useful for validating this project setup, but they are not a universal guarantee for arbitrary question images.
+```text
+data/benchmark_ground_truth.json
+data/benchmark_questions/
+```
 
-The latest reliability pass added strict JSON handling, answer normalization, OCR option parsing, answer repair / verification logic, and provider mode visibility.
+Advanced synthetic benchmark questions.
 
-## Current Features
+```text
+data/expanded_ground_truth.json
+data/expanded_questions/
+```
 
-- FastAPI backend
-- Streamlit UI
-- OCR preprocessing with OpenCV
-- Tesseract OCR integration
-- Mock LLM mode by default
-- LiteLLM integration prepared for text and vision model calls
-- Langflow integration prepared and disabled by default
-- Sample smoke-test dataset
-- Advanced benchmark dataset
-- Expanded synthetic dataset
-- Batch evaluation workflow
-- Pytest test suite
+Expanded synthetic dataset with Turkish text, social studies, math, calculus, geometry, charts, science, noisy text, and mixed visual reasoning.
 
-## Project Architecture
+```text
+data/realistic_exam_ground_truth.json
+data/realistic_exam_questions/
+```
 
-- `app/`: FastAPI app, configuration, and response schemas.
-- `services/`: OCR, image preprocessing, LLM calls, solver pipelines, evaluator, and Langflow client.
-- `ui/`: Streamlit interface for uploading images and choosing a pipeline.
-- `scripts/`: dataset generation and evaluation scripts.
-- `data/sample_questions/`: basic smoke-test question images.
-- `data/benchmark_questions/`: harder benchmark question images.
-- `data/expanded_questions/`: expanded synthetic question images.
-- `tests/`: automated test suite.
-- `configs/`: example LiteLLM configuration.
-- `langflow/`: Langflow notes and integration material.
-- `reports/`: technical writeups and evaluation notes.
-- `screenshots/`: project screenshots.
-- `outputs/`: runtime evaluation results and debug outputs.
+Original realistic exam-style synthetic dataset with 12 LGS/YKS-inspired items:
 
-`outputs/` is for runtime files. CSV results such as `outputs/results.csv` and `outputs/benchmark_results.csv` should not be committed, except for placeholder files such as `.gitkeep` if present.
+- LGS-style math word problem
+- LGS-style Turkish paragraph inference
+- LGS-style science/chart reasoning
+- LGS-style geometry angle problem
+- YKS-style derivative question
+- YKS-style integral/area question
+- YKS-style parabola/graph interpretation
+- YKS-style probability question
+- YKS-style physics work/energy question
+- YKS-style chemistry mole/stoichiometry question
+- YKS-style biology/genetics question
+- Mixed table reasoning question
 
-## Datasets
-
-### Sample Dataset
-
-Located at `data/sample_questions/`.
-
-Includes:
-
-- `q01_text.png`
-- `q02_math.png`
-- `q03_equation.png`
-- `q04_table.png`
-- `q05_chart.png`
-- `q06_geometry.png`
-- `q07_mixed.png`
-- `q08_noisy.png`
-
-Purpose: smoke testing and validating the pipeline in mock mode.
-
-### Benchmark Dataset
-
-Located at `data/benchmark_questions/`.
-
-Includes:
-
-- `q09_parabola_vertex.png`
-- `q10_derivative.png`
-- `q11_limit.png`
-- `q12_integral.png`
-- `q13_geometry_angle.png`
-- `q14_parabola_graph.png`
-- `q15_chart_reasoning.png`
-- `q16_mixed_math_visual.png`
-
-Purpose: more realistic and harder model evaluation with real API mode.
-
-### Expanded Synthetic Dataset
-
-Located at `data/expanded_questions/`.
-
-Includes original synthetic questions `q17` through `q50` covering Turkish-style reading, social studies, math, calculus, geometry, charts, tables, science, noisy text, and mixed visual reasoning.
-
-Purpose: broader repo-safe evaluation without using Kaggle, OSYM, YKS, copyrighted exam questions, or external datasets.
-
-## Setup
+## Installation
 
 Create and activate a virtual environment:
 
@@ -144,23 +148,61 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Create a local environment file:
+Tesseract must also be installed on the machine. The Python package `pytesseract` is only a wrapper; it does not install the OCR engine itself.
+
+## Environment Variables
+
+Create a local `.env` file from the example:
 
 ```powershell
 copy .env.example .env
 ```
 
-Tesseract must be installed separately for OCR. `pytesseract` is only the Python wrapper; the Tesseract OCR engine must also be available on your machine.
+Common settings:
 
-## Running the API
+```env
+LLM_MOCK_MODE=true
+LLM_MODEL_NAME=
+LLM_API_BASE=
+LITELLM_PROXY_URL=
+USE_LANGFLOW=false
+LANGFLOW_URL=
+LANGFLOW_FLOW_ID=
+```
 
-Start FastAPI:
+Do not commit `.env`. Do not put API key values in documentation, screenshots, commits, or shared reports.
+
+## Running the Streamlit UI
+
+Start the UI:
+
+```powershell
+streamlit run ui/streamlit_app.py
+```
+
+The UI supports:
+
+- OCR + LLM
+- Direct Vision LLM
+- Both / Compare
+- Adaptive Auto
+- OCR + Langflow
+
+The project status box is dynamic:
+
+- In mock mode, it says mock mode is active and no API keys are needed.
+- In real provider mode, it warns that requests may use API tokens and shows the configured model name if available.
+- It does not display API keys.
+
+## Running the FastAPI Backend
+
+Start the backend:
 
 ```powershell
 uvicorn app.main:app --reload
 ```
 
-Useful endpoints:
+Useful local endpoints:
 
 - `http://127.0.0.1:8000/health`
 - `http://127.0.0.1:8000/docs`
@@ -173,140 +215,150 @@ The `/solve` endpoint accepts an uploaded image and supports:
 - `mode=adaptive`
 - `mode=ocr_langflow`
 
-## Running the Streamlit UI
+## Running Evaluation Scripts
 
-Start the local UI:
-
-```powershell
-streamlit run ui/streamlit_app.py
-```
-
-The UI lets you upload a question image and choose one of:
-
-- OCR + LLM
-- Direct Vision LLM
-- Both / Compare
-- Adaptive Auto
-- OCR + Langflow
-
-## Generating Question Images
-
-Generate the sample smoke-test dataset:
+Run a dataset:
 
 ```powershell
-python scripts/create_sample_questions.py
+python scripts/run_evaluation.py --dataset sample --mode adaptive
+python scripts/run_evaluation.py --dataset expanded --mode adaptive
+python scripts/run_evaluation.py --dataset realistic --mode adaptive
+python scripts/run_evaluation.py --dataset realistic --mode both
 ```
 
-Generate the advanced benchmark dataset:
+Available dataset names:
 
-```powershell
-python scripts/create_benchmark_questions.py
-```
+- `sample`
+- `benchmark`
+- `expanded`
+- `realistic`
+- `all`
 
-Generate the expanded synthetic dataset:
+The `all` dataset keeps the original sample, benchmark, and expanded grouping. The realistic dataset is kept separate so existing expectations are not silently changed.
 
-```powershell
-python scripts/create_expanded_questions.py
-```
+Evaluation CSV files are written under `outputs/`.
 
-## Running Evaluation
+## Test Results
 
-Evaluate the sample dataset:
-
-```powershell
-python scripts/run_evaluation.py --dataset sample
-```
-
-Evaluate the benchmark dataset:
-
-```powershell
-python scripts/run_evaluation.py --dataset benchmark
-```
-
-Evaluate the expanded synthetic dataset:
-
-```powershell
-python scripts/run_evaluation.py --dataset expanded
-```
-
-Evaluate all configured datasets:
-
-```powershell
-python scripts/run_evaluation.py --dataset all
-```
-
-The sample dataset is expected to perform well in mock mode. The benchmark dataset is intended for real model testing, so mock-mode accuracy may be low by design.
-
-Runtime CSV outputs are saved under `outputs/` and ignored by git.
-
-## Running Tests
-
-Run the full test suite:
-
-```powershell
-python -m pytest -q
-```
-
-Latest known result:
+Latest known local test result:
 
 ```text
-96 passed, 1 warning
+140 passed, 1 warning
 ```
 
-## Mock Mode vs Real API Mode
+Representative evaluation results:
 
-Mock mode is the default. It is safe, does not require API keys, and validates the infrastructure without API costs.
+| Run | Result |
+| --- | ---: |
+| Sample adaptive | 8/8, 100.00% |
+| Expanded adaptive | 31/34, 91.18% |
+| Realistic adaptive | 11/12, 91.67% |
+| Realistic both | 10/12, 83.33% |
 
-Real API mode requires local `.env` configuration. Never commit real API keys.
+Real provider results may vary slightly between runs because real LLM outputs are not fully deterministic. These results should be read as representative demo results, not as a fixed academic benchmark.
 
-Example `.env`:
+## Screenshots
 
-```env
-LLM_MOCK_MODE=true
-LLM_MODEL_NAME=
-LLM_API_KEY=
-LLM_API_BASE=
-LITELLM_PROXY_URL=
-USE_LANGFLOW=false
-LANGFLOW_URL=
-LANGFLOW_API_KEY=
-LANGFLOW_FLOW_ID=
-```
+### Streamlit UI
 
-## LiteLLM Integration
+![Streamlit home in real provider mode](screenshots/streamlit_home_real_provider.png)
 
-LiteLLM support is prepared for real text and vision model calls. In real API mode, the project can call LiteLLM-compatible providers using the configured model name, API key, base URL, or LiteLLM proxy URL.
+![Adaptive success on math question](screenshots/streamlit_adaptive_success_math.png)
 
-Mock mode remains the recommended default for local setup, tests, and GitHub-safe demos.
+![Both mode on real integral question](screenshots/streamlit_both_real_integral.png)
+
+![Visual chart routed correctly](screenshots/streamlit_visual_chart_fixed.png)
+
+### Realistic Dataset Example
+
+![YKS-style biology genetics question](screenshots/r11_yks_biology_genetics.png)
+
+### Langflow
+
+![Langflow canvas for OCR question solver](screenshots/langflow_canvas_ocr_question_solver.png)
+
+![Langflow playground image output](screenshots/langflow_playground_image_output.png)
+
+### Test and Evaluation Evidence
+
+![Pytest 140 passed](screenshots/pytest_140_passed.png)
+
+![Evaluation results summary](screenshots/evaluation_results_summary.png)
 
 ## Langflow Integration
 
-The Langflow client is integrated for the optional `mode=ocr_langflow` pipeline and is disabled by default. It can be enabled locally with `.env` settings such as `USE_LANGFLOW=true`, `LANGFLOW_URL`, `LANGFLOW_API_KEY`, and `LANGFLOW_FLOW_ID`.
+The project includes an optional `ocr_langflow` mode. In this mode:
 
-This keeps the core Python application usable without Langflow. `mode=adaptive` currently routes among the existing local pipelines and can be extended later to prefer OCR + Langflow for text-heavy questions when configured.
+1. The Python pipeline extracts OCR text from the uploaded image.
+2. The OCR text is sent to a configured local Langflow flow.
+3. Langflow returns a structured answer result.
 
-## Current Status
+The Langflow integration is disabled by default and should be enabled only in local development when the Langflow server and flow ID are configured.
 
-- OCR pipeline works.
-- Mock LLM mode works.
-- Vision mock mode works.
-- Both / Compare mode works.
-- Sample evaluation works in mock mode.
-- Real API evaluation works on the included sample and benchmark demo datasets.
-- Runtime CSV results are generated locally and should not be committed.
+The exported flow and related notes are stored under:
 
-## Limitations
+```text
+langflow/
+```
 
-- Mock mode does not represent real model intelligence.
-- OCR quality depends on Tesseract installation, scan quality, and preprocessing.
-- Real API accuracy depends on the selected model, prompt behavior, image quality, and dataset difficulty.
-- Generated images are controlled demo samples, not a full educational dataset.
+## Mock Mode vs Real Provider Mode
 
-## Future Work
+### Mock Mode
 
-- Real LiteLLM API testing
-- Real vision model comparison
-- Langflow flow connection
-- Richer benchmark set
-- Latency and cost comparison
-- Report updates and screenshots
+Mock mode is useful for:
+
+- Running tests without external services.
+- Demonstrating the pipeline safely.
+- Avoiding provider usage.
+- Keeping local development predictable.
+
+Set:
+
+```env
+LLM_MOCK_MODE=true
+```
+
+### Real Provider Mode
+
+Real provider mode is useful for:
+
+- Testing actual model behavior.
+- Comparing OCR text solving with direct vision solving.
+- Demonstrating the system with OpenAI-compatible providers.
+
+Set:
+
+```env
+LLM_MOCK_MODE=false
+LLM_MODEL_NAME=openai/gpt-4.1-mini
+```
+
+Provider configuration should remain local. Do not commit secrets or private account information.
+
+## Known Limitations
+
+- OCR can lose visual relationships, especially in bar charts, coordinate grids, and geometry diagrams.
+- The adaptive router is heuristic. It has improved visual routing, but it is not a trained classifier.
+- Mock mode is rule-based and only covers known synthetic patterns.
+- Real model outputs can vary slightly between runs.
+- The synthetic datasets are useful for evaluation demos, but they are not a substitute for a large, independently curated benchmark.
+- Tesseract quality depends on local installation, image quality, font size, and preprocessing.
+- Langflow must be running and configured locally for `ocr_langflow` mode.
+
+## Future Improvements
+
+- Add more realistic but original synthetic visual reasoning questions.
+- Track latency and token usage per pipeline.
+- Add a clearer disagreement review screen in Streamlit.
+- Add per-question error categories in evaluation outputs.
+- Improve OCR confidence handling for noisy images.
+- Add configurable router thresholds.
+- Expand Langflow experiments with alternative prompt and parsing nodes.
+
+## Repository Safety Notes
+
+- Do not commit `.env`.
+- Do not commit API keys, billing screenshots, or private account information.
+- Runtime outputs under `outputs/` are local artifacts.
+- Synthetic datasets in `data/` are original generated assets for this demo.
+- Screenshots should avoid exposing secrets, private dashboards, or account-specific usage details.
