@@ -1,0 +1,122 @@
+[
+  {
+    "id": "r01",
+    "question_id": "r01",
+    "image_path": "data/realistic_exam_questions/r01_lgs_math_word_problem.png",
+    "question_type": "lgs_math",
+    "difficulty": "realistic_exam_synthetic",
+    "correct_answer": "D",
+    "expected_reasoning": "18 pencils make 6 boxes; each box needs 2 erasers, so 12 erasers are needed.",
+    "notes": "Original synthetic LGS-style proportional reasoning."
+  },
+  {
+    "id": "r02",
+    "question_id": "r02",
+    "image_path": "data/realistic_exam_questions/r02_lgs_turkish_inference.png",
+    "question_type": "lgs_turkish",
+    "difficulty": "realistic_exam_synthetic",
+    "correct_answer": "B",
+    "expected_reasoning": "Repeating previous notes shows that Mert reinforces his preparation.",
+    "notes": "Original Turkish inference item."
+  },
+  {
+    "id": "r03",
+    "question_id": "r03",
+    "image_path": "data/realistic_exam_questions/r03_lgs_science_chart_reasoning.png",
+    "question_type": "lgs_science_chart",
+    "difficulty": "realistic_exam_synthetic",
+    "correct_answer": "C",
+    "expected_reasoning": "The 10 g bar has the greatest value, 15.",
+    "notes": "Original synthetic science chart."
+  },
+  {
+    "id": "r04",
+    "question_id": "r04",
+    "image_path": "data/realistic_exam_questions/r04_lgs_geometry_angle.png",
+    "question_type": "lgs_geometry",
+    "difficulty": "realistic_exam_synthetic",
+    "correct_answer": "D",
+    "expected_reasoning": "Same-side interior angles are supplementary, so x = 110 degrees.",
+    "notes": "Original synthetic geometry visual."
+  },
+  {
+    "id": "r05",
+    "question_id": "r05",
+    "image_path": "data/realistic_exam_questions/r05_yks_derivative.png",
+    "question_type": "yks_calculus",
+    "difficulty": "realistic_exam_synthetic",
+    "correct_answer": "C",
+    "expected_reasoning": "f'(x) = 3x^2 - 4, so f'(2) = 8.",
+    "notes": "Original synthetic derivative question."
+  },
+  {
+    "id": "r06",
+    "question_id": "r06",
+    "image_path": "data/realistic_exam_questions/r06_yks_integral_area.png",
+    "question_type": "yks_calculus_visual",
+    "difficulty": "realistic_exam_synthetic",
+    "correct_answer": "D",
+    "expected_reasoning": "Integral from 0 to 3 of 2x + 1 is x^2 + x from 0 to 3, which is 12.",
+    "notes": "Original synthetic integral-area visual."
+  },
+  {
+    "id": "r07",
+    "question_id": "r07",
+    "image_path": "data/realistic_exam_questions/r07_yks_parabola_graph.png",
+    "question_type": "yks_graph",
+    "difficulty": "realistic_exam_synthetic",
+    "correct_answer": "B",
+    "expected_reasoning": "The graph labels the vertex as (2, -1).",
+    "notes": "Original synthetic parabola graph."
+  },
+  {
+    "id": "r08",
+    "question_id": "r08",
+    "image_path": "data/realistic_exam_questions/r08_yks_probability.png",
+    "question_type": "yks_probability",
+    "difficulty": "realistic_exam_synthetic",
+    "correct_answer": "E",
+    "expected_reasoning": "There are 5 non-green balls out of 6 total balls.",
+    "notes": "Original synthetic probability question."
+  },
+  {
+    "id": "r09",
+    "question_id": "r09",
+    "image_path": "data/realistic_exam_questions/r09_yks_physics_work.png",
+    "question_type": "yks_physics",
+    "difficulty": "realistic_exam_synthetic",
+    "correct_answer": "C",
+    "expected_reasoning": "Work is force times displacement, so 12 * 5 = 60 J.",
+    "notes": "Original synthetic work-energy question."
+  },
+  {
+    "id": "r10",
+    "question_id": "r10",
+    "image_path": "data/realistic_exam_questions/r10_yks_chemistry_mole.png",
+    "question_type": "yks_chemistry",
+    "difficulty": "realistic_exam_synthetic",
+    "correct_answer": "B",
+    "expected_reasoning": "The H2:O2 mole ratio is 2:1, so 4 mol H2 needs 2 mol O2.",
+    "notes": "Original synthetic stoichiometry question."
+  },
+  {
+    "id": "r11",
+    "question_id": "r11",
+    "image_path": "data/realistic_exam_questions/r11_yks_biology_genetics.png",
+    "question_type": "yks_biology",
+    "difficulty": "realistic_exam_synthetic",
+    "correct_answer": "A",
+    "expected_reasoning": "Aa x Aa gives AA, Aa, Aa, aa, so aa has probability 1/4.",
+    "notes": "Original synthetic genetics question."
+  },
+  {
+    "id": "r12",
+    "question_id": "r12",
+    "image_path": "data/realistic_exam_questions/r12_mixed_table_reasoning.png",
+    "question_type": "mixed_table",
+    "difficulty": "realistic_exam_synthetic",
+    "correct_answer": "C",
+    "expected_reasoning": "2 adult tickets cost 180 and 3 student tickets cost 150, total 330.",
+    "notes": "Original synthetic table reasoning."
+  }
+]
