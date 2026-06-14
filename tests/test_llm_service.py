@@ -202,6 +202,32 @@ def test_mock_text_rules_solve_expanded_math_patterns(monkeypatch) -> None:
         assert result["confidence"] > 0
 
 
+def test_mock_text_maps_word_problem_result_to_matching_option(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+
+    result = solve_text_question(
+        "Mina has 8 pencils and buys 7 more. How many pencils does she have now?\n"
+        "A) 12\nB) 13\nC) 14\nD) 15\nE) 16"
+    )
+
+    assert result["status"] == "success"
+    assert result["answer"] == "D"
+    assert "15" in result["explanation"]
+
+
+def test_mock_text_maps_multi_step_total_to_matching_option(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "llm_mock_mode", True)
+
+    result = solve_text_question(
+        "A shop sells 3 notebooks for 5 each and 2 pens for 2 each. What is the total cost?\n"
+        "A) 15\nB) 17\nC) 19\nD) 21\nE) 25"
+    )
+
+    assert result["status"] == "success"
+    assert result["answer"] == "C"
+    assert "19" in result["explanation"]
+
+
 def test_mock_text_rules_tolerate_common_ocr_math_artifacts(monkeypatch) -> None:
     monkeypatch.setattr(settings, "llm_mock_mode", True)
 
@@ -214,6 +240,18 @@ def test_mock_text_rules_tolerate_common_ocr_math_artifacts(monkeypatch) -> None
             "The parabola y = (x - 1)42 + 2 has vertex at which point?\n"
             "A) (1, 2)\nB) (2, 1)\nC) (-1, 2)\nD) (1, -2)\nE) (0, 2)",
             "A",
+        ),
+        (
+            "If (x) = x42, what is (3)?\nA)3\nB)4\nC)5\nD)6\nE)9",
+            "D",
+        ),
+        (
+            "If f(x) = x 2, what is f'(3)?\nA)3\nB)4\nC)5\nD)6\nE)9",
+            "D",
+        ),
+        (
+            "If f(x) = x 42, what is (3)?\nA)3\nB)4\nC)5\nD)6\nE)9",
+            "D",
         ),
         (
             "A cart with mass 3 kg accelerates at 2 m/s*2. What is the net force?\n"
@@ -326,6 +364,30 @@ def test_infer_answer_from_explanation_detects_correct_answer_phrase() -> None:
     options = {"A": "4", "B": "6", "C": "8"}
 
     assert infer_answer_from_explanation_and_options("The correct answer is B.", options) == "B"
+
+
+def test_infer_answer_from_explanation_prefers_computed_number_over_wrong_letter() -> None:
+    options = {"A": "12", "B": "13", "C": "14", "D": "15", "E": "16"}
+
+    assert (
+        infer_answer_from_explanation_and_options(
+            "Answer: B. Mina had 8 pencils and bought 7 more, so 8 + 7 = 15 pencils.",
+            options,
+        )
+        == "D"
+    )
+
+
+def test_infer_answer_from_explanation_uses_final_total_number() -> None:
+    options = {"A": "15", "B": "17", "C": "19", "D": "21", "E": "25"}
+
+    assert (
+        infer_answer_from_explanation_and_options(
+            "Answer: B. 3 notebooks at 5 each = 15; 2 pens at 2 each = 4; total = 15 + 4 = 19.",
+            options,
+        )
+        == "C"
+    )
 
 
 def test_infer_answer_from_explanation_detects_parenthesized_correct_answer() -> None:
@@ -472,6 +534,90 @@ def test_repair_llm_result_with_options_repairs_q16_style_numeric_result() -> No
     assert repaired["answer_repaired"] is True
 
 
+def test_repair_llm_result_with_options_does_not_use_question_number_as_answer() -> None:
+    result = {
+        "answer": "C",
+        "solution": "C",
+        "explanation": "25 percent of 80 is one quarter of 80, which is 20.",
+        "confidence": 0.88,
+        "raw_response": (
+            "Answer: C\n"
+            "Explanation: 25 percent of 80 is one quarter of 80, which is 20.\n"
+            "Confidence: 0.88"
+        ),
+        "status": "success",
+        "error": None,
+    }
+
+    repaired = repair_llm_result_with_options(result, "A)10\nB)15\nC)20\nD)25\nE)30")
+
+    assert repaired["answer"] == "C"
+    assert repaired["answer_repaired"] is False
+
+
+def test_repair_llm_result_with_options_matches_numeric_result_inside_unit_option() -> None:
+    result = {
+        "answer": "B",
+        "solution": "B",
+        "explanation": "Force equals mass times acceleration, so 3 * 2 = 6.",
+        "confidence": 0.8,
+        "raw_response": "",
+        "status": "success",
+        "error": None,
+    }
+
+    repaired = repair_llm_result_with_options(result, "A)4N\nB)5N\nC)6N\nD)8N\nE)10N")
+
+    assert repaired["answer"] == "C"
+    assert repaired["answer_repaired"] is True
+
+
+def test_repair_llm_result_with_options_repairs_q50_style_row_b_sum() -> None:
+    result = {
+        "answer": "D",
+        "solution": "D",
+        "explanation": "The value in row B is 7, and 7 + 5 = 12.",
+        "confidence": 1.0,
+        "raw_response": (
+            '{\n  "answer": "D",\n'
+            '  "explanation": "The value in row B is 7, and 7 + 5 = 12.",\n'
+            '  "confidence": 1.0\n}'
+        ),
+        "status": "success",
+        "error": None,
+    }
+    ocr_text = (
+        "If the value in row B is 7 and we add 5, what is the result?\n"
+        "A) 10\nB) 11\nC) 12\nD) 13\nE) 14"
+    )
+
+    repaired = repair_llm_result_with_options(result, ocr_text)
+
+    assert repaired["answer"] == "C"
+    assert repaired["answer_repaired"] is True
+
+
+def test_repair_llm_result_with_options_does_not_parse_json_as_options() -> None:
+    result = {
+        "answer": "C",
+        "solution": "C",
+        "explanation": "7 (value in row B) + 5 = 12",
+        "confidence": 1.0,
+        "raw_response": (
+            '{\n  "answer": "C",\n'
+            '  "explanation": "7 (value in row B) + 5 = 12",\n'
+            '  "confidence": 1.0\n}'
+        ),
+        "status": "success",
+        "error": None,
+    }
+
+    repaired = repair_llm_result_with_options(result, "")
+
+    assert repaired["answer"] == "C"
+    assert repaired["answer_repaired"] is False
+
+
 def test_repair_llm_result_with_options_changes_answer_when_value_matches_option() -> None:
     result = {
         "answer": "D",
@@ -568,6 +714,36 @@ def test_real_text_mode_calls_litellm_completion(monkeypatch) -> None:
     assert result["answer"] == "C"
     assert result["provider_mode"] == "real"
     assert "Real text response" in result["explanation"]
+
+
+def test_real_text_mode_uses_mock_fallback_for_known_unknown_case(monkeypatch) -> None:
+    from types import SimpleNamespace
+
+    def fake_completion(**kwargs):
+        return SimpleNamespace(
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(
+                        content=(
+                            '{"answer": "unknown", '
+                            '"explanation": "The OCR text is malformed.", '
+                            '"confidence": 0.0}'
+                        )
+                    )
+                )
+            ]
+        )
+
+    monkeypatch.setattr(settings, "llm_mock_mode", False)
+    monkeypatch.setattr(settings, "llm_model_name", "openai/test-model")
+    monkeypatch.setattr(settings, "llm_api_key", "test-key")
+    monkeypatch.setattr("services.llm_service.completion", fake_completion)
+
+    result = solve_text_question("If (x) = x42, what is (3)?\nA)3\nB)4\nC)5\nD)6\nE)9")
+
+    assert result["status"] == "success"
+    assert result["answer"] == "D"
+    assert result["provider_mode"] == "mock_fallback"
 
 
 def test_real_vision_mode_calls_litellm_completion(tmp_path, monkeypatch) -> None:

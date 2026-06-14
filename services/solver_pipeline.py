@@ -190,7 +190,7 @@ def run_adaptive_pipeline(image_path: str) -> Dict[str, Any]:
         return _with_adaptive_metadata(result, router_decision, "ocr", "ocr")
 
     if selected_mode == "vision":
-        result = dict(run_vision_llm_pipeline(image_path))
+        result = _repair_pipeline_result(dict(run_vision_llm_pipeline(image_path)), text)
         result["pipeline"] = "adaptive_vision_llm"
         result["recommended_pipeline"] = "vision_llm"
         result = _with_adaptive_metadata(result, router_decision, "vision", "vision")
