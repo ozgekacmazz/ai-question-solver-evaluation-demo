@@ -9,6 +9,15 @@
 | Claude | 19 | 20 | 95.0% |
 | Our tool | 17 | 20 | 85.0% |
 
+## Summary Table
+
+| System | Correct | Accuracy |
+|---|---:|---:|
+| GPT Web UI | 20/20 | 100% |
+| Gemini Web UI | 19/20 | 95% |
+| Claude Web UI | 19/20 | 95% |
+| Local Tool | 17/20 | 85% |
+
 ## Observations
 
 - GPT answered all 20 questions correctly in this run.

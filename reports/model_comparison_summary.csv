@@ -1,0 +1,21 @@
+﻿question_id,subject,topic,correct_answer,gpt_answer,gpt_correct,gemini_answer,gemini_correct,claude_answer,claude_correct,tool_answer,tool_correct,ocr_issue,error_type,notes
+cmp_m01,matematik,fonksiyon,C,C,TRUE,C,TRUE,C,TRUE,C,TRUE,,correct,All answers correct.
+cmp_m02,matematik,parabol grafiği,D,D,TRUE,D,TRUE,D,TRUE,D,TRUE,,correct,All answers correct.
+cmp_m03,matematik,olasılık,B,B,TRUE,B,TRUE,B,TRUE,B,TRUE,,correct,All answers correct.
+cmp_m04,matematik,geometri - alan,C,C,TRUE,C,TRUE,C,TRUE,C,TRUE,,correct,All answers correct.
+cmp_m05,matematik,trigonometri,C,C,TRUE,C,TRUE,C,TRUE,C,TRUE,,correct,All answers correct.
+cmp_m06,matematik,aritmetik dizi,D,D,TRUE,D,TRUE,D,TRUE,C,FALSE,,model_reasoning_error,Tool chose C; OCR options were noisy.
+cmp_m07,matematik,türev,B,B,TRUE,B,TRUE,B,TRUE,B,TRUE,,correct,All answers correct.
+cmp_m08,matematik,belirli integral,E,E,TRUE,C,FALSE,B,FALSE,A,FALSE,,ocr_error,Gemini/Claude missed; tool OCR lost graph/options.
+cmp_m09,matematik,logaritma,C,C,TRUE,C,TRUE,C,TRUE,C,TRUE,,correct,All answers correct.
+cmp_m10,matematik,tablo yorumlama,D,D,TRUE,D,TRUE,D,TRUE,A,FALSE,,ocr_error,Tool OCR omitted table values.
+cmp_p01,fizik,hız-zaman grafiği,C,C,TRUE,C,TRUE,C,TRUE,C,TRUE,,correct,All answers correct.
+cmp_p02,fizik,dinamik,B,B,TRUE,B,TRUE,B,TRUE,B,TRUE,,correct,All answers correct.
+cmp_p03,fizik,iş ve enerji,D,D,TRUE,D,TRUE,D,TRUE,D,TRUE,,correct,All answers correct.
+cmp_p04,fizik,elektrik devresi,B,B,TRUE,B,TRUE,B,TRUE,B,TRUE,,correct,All answers correct.
+cmp_p05,fizik,optik - aynalar,D,D,TRUE,D,TRUE,D,TRUE,D,TRUE,,correct,All answers correct.
+cmp_p06,fizik,dalga,C,C,TRUE,C,TRUE,C,TRUE,C,TRUE,,correct,All answers correct.
+cmp_p07,fizik,kaldırma kuvveti,A,A,TRUE,A,TRUE,A,TRUE,A,TRUE,,correct,All answers correct.
+cmp_p08,fizik,ısı ve sıcaklık,E,E,TRUE,E,TRUE,E,TRUE,E,TRUE,,correct,All answers correct.
+cmp_p09,fizik,momentum,B,B,TRUE,B,TRUE,B,TRUE,B,TRUE,,correct,All answers correct.
+cmp_p10,fizik,tork,C,C,TRUE,C,TRUE,C,TRUE,C,TRUE,,correct,All answers correct.
