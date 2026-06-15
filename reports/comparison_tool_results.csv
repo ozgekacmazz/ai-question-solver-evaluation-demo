@@ -1,8 +1,8 @@
 question_id,subject,topic,difficulty,correct_answer,final_answer,tool_answer,tool_correct,tool_confidence,recommended_pipeline,evaluation_mode,ocr_text,ocr_issue,error_type,status,error,needs_manual_review,image_path,expected_solution
-cmp_m01,matematik,fonksiyon,orta,C,7,unknown,False,0.0,none,both,"f(x) = 2x - 3 fonksiyonu veriliyor.
+cmp_m01,matematik,fonksiyon,orta,C,7,C,True,1.0,both_agree,both,"f(x) = 2x - 3 fonksiyonu veriliyor.
 Buna gore f(f(4)) kactir?
-A)3 B)5 C)7 D)9 E)11",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_m01_function.png,f(x) = 2x - 3 oldugundan f(f(4)) icin once f(4)=5 bulunur. Sonra f(5)=7 olur.
-cmp_m02,matematik,parabol grafiği,orta,D,-1,unknown,False,0.0,none,both,"y
+A)3 B)5 C)7 D)9 E)11",,,success,,False,data/comparison_questions/cmp_m01_function.png,f(x) = 2x - 3 oldugundan f(f(4)) icin once f(4)=5 bulunur. Sonra f(5)=7 olur.
+cmp_m02,matematik,parabol grafiği,orta,D,-1,D,True,1.0,vision_llm,both,"y
 3
 2
 1
@@ -11,81 +11,81 @@ I I Xx
 7 (2, -1)
 2
 Grafikte verilen parabolun minimum degeri kactir?
-A)-4 B)-3 C)-2 D)-1 E)0",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_m02_parabola_graph.png,"Grafikte parabolun tepe noktasi (2, -1) olarak verilmistir. Minimum deger tepe noktasinin y degeridir."
-cmp_m03,matematik,olasılık,orta,B,1/3,unknown,False,0.0,none,both,"Bir kutuda 3 kirmizi, 2 mavi ve 1 yesil top vardir.
+A)-4 B)-3 C)-2 D)-1 E)0",,,success,,False,data/comparison_questions/cmp_m02_parabola_graph.png,"Grafikte parabolun tepe noktasi (2, -1) olarak verilmistir. Minimum deger tepe noktasinin y degeridir."
+cmp_m03,matematik,olasılık,orta,B,1/3,B,True,1.0,vision_llm,both,"Bir kutuda 3 kirmizi, 2 mavi ve 1 yesil top vardir.
 Rastgele secilen bir topun mavi olma olasiligi nedir?
-A) 1/6 B)1/38 ©)1/2 D)2/3 E)5/6",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_m03_probability.png,"Kutuda 3 kirmizi, 2 mavi, 1 yesil top vardir. Toplam 6 top icinde mavi top sayisi 2 oldugundan olasilik 2/6 = 1/3 olur."
-cmp_m04,matematik,geometri - alan,orta,C,6,unknown,False,0.0,none,both,"Dik ucgenin alani 12 birim kare olduguna gore x kactir?
+A) 1/6 B)1/38 ©)1/2 D)2/3 E)5/6",,,success,,False,data/comparison_questions/cmp_m03_probability.png,"Kutuda 3 kirmizi, 2 mavi, 1 yesil top vardir. Toplam 6 top icinde mavi top sayisi 2 oldugundan olasilik 2/6 = 1/3 olur."
+cmp_m04,matematik,geometri - alan,orta,C,6,C,True,1.0,vision_llm,both,"Dik ucgenin alani 12 birim kare olduguna gore x kactir?
 A)3 B)4 C)6 D)8 E)10
 | IN
-4",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_m04_triangle_area.png,Dik ucgende alan (dik kenarlar carpimi)/2'dir. 4*x/2 = 12 den x = 6 bulunur.
-cmp_m05,matematik,trigonometri,orta,C,5,unknown,False,0.0,none,both,"Dar aci A icin sin A= 3/5 veriliyor.
+4",,,success,,False,data/comparison_questions/cmp_m04_triangle_area.png,Dik ucgende alan (dik kenarlar carpimi)/2'dir. 4*x/2 = 12 den x = 6 bulunur.
+cmp_m05,matematik,trigonometri,orta,C,5,C,True,0.9,both_agree,both,"Dar aci A icin sin A= 3/5 veriliyor.
 Buna gore 5*cos A+ 1 kactir?
-A)3 B)4 C)5 D)6 E)7",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_m05_trigonometry.png,sin A = karsi/hipotenus = 3/5 ise 3-4-5 dik ucgeninden cos A = 4/5 olur. 5*cos A + 1 = 4 + 1 = 5.
-cmp_m06,matematik,aritmetik dizi,orta,D,25,unknown,False,0.0,none,both,"Bir aritmetik dizide a1 = 7 ve a4 = 16'dir.
+A)3 B)4 C)5 D)6 E)7",,,success,,False,data/comparison_questions/cmp_m05_trigonometry.png,sin A = karsi/hipotenus = 3/5 ise 3-4-5 dik ucgeninden cos A = 4/5 olur. 5*cos A + 1 = 4 + 1 = 5.
+cmp_m06,matematik,aritmetik dizi,orta,D,25,C,False,0.9,both_agree,both,"Bir aritmetik dizide a1 = 7 ve a4 = 16'dir.
 Buna gore a7 kactir?
-A)19 B)21 ©C)23 D)25 £E)27",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_m06_sequence.png,Aritmetik dizide ortak fark 3'tur. a7 = a1 + 6d = 7 + 18 = 25 olur.
-cmp_m07,matematik,türev,orta,B,8,unknown,False,0.0,none,both,"f(x) = x43 - 2x42 + 4x fonksiyonu veriliyor.
+A)19 B)21 ©C)23 D)25 £E)27",,solution_or_model_error,success,,True,data/comparison_questions/cmp_m06_sequence.png,Aritmetik dizide ortak fark 3'tur. a7 = a1 + 6d = 7 + 18 = 25 olur.
+cmp_m07,matematik,türev,orta,B,8,B,True,1.0,vision_llm,both,"f(x) = x43 - 2x42 + 4x fonksiyonu veriliyor.
 Buna gore f(2) kactir?
-A)6 B)8 C)10 D)12 E)14",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_m07_derivative.png,"f'(x) = 3x^2 - 4x oldugundan f'(2) = 12 - 8 = 4 degil; soru f(x)=x^3-2x^2+4x icin f'(x)=3x^2-4x+4, f'(2)=12-8+4=8 olur."
-cmp_m08,matematik,belirli integral,orta,E,10,unknown,False,0.0,none,both,"Sekilde boyali bélgenin alani kactir?
+A)6 B)8 C)10 D)12 E)14",,,success,,False,data/comparison_questions/cmp_m07_derivative.png,"f'(x) = 3x^2 - 4x oldugundan f'(2) = 12 - 8 = 4 degil; soru f(x)=x^3-2x^2+4x icin f'(x)=3x^2-4x+4, f'(2)=12-8+4=8 olur."
+cmp_m08,matematik,belirli integral,orta,E,10,A,False,1.0,vision_llm,both,"Sekilde boyali bélgenin alani kactir?
 A)4 B)¥% 8 D)9 £E)10
 2
 x
-2",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_m08_integral_area.png,Integral 0'dan 2'ye (3x+2) dx = [(3/2)x^2 + 2x]_0^2 = 6 + 4 = 10 olur.
-cmp_m09,matematik,logaritma,orta,C,5,unknown,False,0.0,none,both,"log2(x - 1) = 3 olduguna gore
+2",,solution_or_model_error,success,,True,data/comparison_questions/cmp_m08_integral_area.png,Integral 0'dan 2'ye (3x+2) dx = [(3/2)x^2 + 2x]_0^2 = 6 + 4 = 10 olur.
+cmp_m09,matematik,logaritma,orta,C,5,C,True,1.0,both_agree,both,"log2(x - 1) = 3 olduguna gore
 x - 4 kactir?
-A)3 B)4 C)5 D)6 EB)8",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_m09_logarithm.png,"log2(x-1)=3 ise x-1=2^3=8, buradan x=9 olur. Koku sorulan ifade x-4 oldugundan 5'tir."
-cmp_m10,matematik,tablo yorumlama,orta,D,42,unknown,False,0.0,none,both,"Kirtasiye fiyat tablosu:
+A)3 B)4 C)5 D)6 EB)8",,,success,,False,data/comparison_questions/cmp_m09_logarithm.png,"log2(x-1)=3 ise x-1=2^3=8, buradan x=9 olur. Koku sorulan ifade x-4 oldugundan 5'tir."
+cmp_m10,matematik,tablo yorumlama,orta,D,42,A,False,0.9,vision_llm,both,"Kirtasiye fiyat tablosu:
 2 defter ve 3 kalem alan bir ogrenci toplam kac TL oder?
-A)36 B)38 C)40 D)42 £E)45",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_m10_table.png,2 defter 36 TL ve 3 kalem 6 TL tuttugundan toplam 42 TL olur.
-cmp_p01,fizik,hız-zaman grafiği,orta,C,40 m,unknown,False,0.0,none,both,"Hiz-zaman grafigine gore 0-4 s araliginda cismin yer
+A)36 B)38 C)40 D)42 £E)45",,solution_or_model_error,success,,True,data/comparison_questions/cmp_m10_table.png,2 defter 36 TL ve 3 kalem 6 TL tuttugundan toplam 42 TL olur.
+cmp_p01,fizik,hız-zaman grafiği,orta,C,40 m,C,True,1.0,vision_llm,both,"Hiz-zaman grafigine gore 0-4 s araliginda cismin yer
 uv mis) F
 degistirmesi kactir?
 A)10m]B)20m C)40m D)50m E)80m
 10
 t(s)
-4",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_p01_velocity_time.png,Hiz-zaman grafiginin altindaki alan yer degistirmeyi verir. 0-4 s arasi hiz 10 m/s oldugundan alan 4*10=40 m'dir.
-cmp_p02,fizik,dinamik,orta,B,3 m/s^2,unknown,False,0.0,none,both,"Surtunmesiz yatay duzlemdeki cisme sekildeki kuvvetler
+4",,,success,,False,data/comparison_questions/cmp_p01_velocity_time.png,Hiz-zaman grafiginin altindaki alan yer degistirmeyi verir. 0-4 s arasi hiz 10 m/s oldugundan alan 4*10=40 m'dir.
+cmp_p02,fizik,dinamik,orta,B,3 m/s^2,B,True,0.9,vision_llm,both,"Surtunmesiz yatay duzlemdeki cisme sekildeki kuvvetler
 uygulanmaktadir.
 Cismin ivmesi kactir?
 A) 2 m/s42 B)3m/s42. C)4m/s42 D)5Sm/s42 E)7
 m/s42
 
-4X) me LEY } m=4kg | >",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_p02_dynamics.png,Net kuvvet 20 - 8 = 12 N'dur. F = m*a bagintisindan a = 12/4 = 3 m/s^2 bulunur.
-cmp_p03,fizik,iş ve enerji,orta,D,80 J,unknown,False,0.0,none,both,"Yatay duzlemde duran bir cisme hareket dogrultusunda
+4X) me LEY } m=4kg | >",,,success,,False,data/comparison_questions/cmp_p02_dynamics.png,Net kuvvet 20 - 8 = 12 N'dur. F = m*a bagintisindan a = 12/4 = 3 m/s^2 bulunur.
+cmp_p03,fizik,iş ve enerji,orta,D,80 J,D,True,1.0,both_agree,both,"Yatay duzlemde duran bir cisme hareket dogrultusunda
 16 N kuvvet uygulanip cisim 5 m yer degistiriyor.
 Yapilan is kactir?
 
-A)20J B)40J C)60J D)80J E)100J",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_p03_work.png,Yatay duzlemde kuvvet hareket dogrultusunda oldugundan W = F*x = 16*5 = 80 J olur.
-cmp_p04,fizik,elektrik devresi,orta,B,2 A,unknown,False,0.0,none,both,"Seri bagli direnclerden olusan devrede akim siddeti kactir?
+A)20J B)40J C)60J D)80J E)100J",,,success,,False,data/comparison_questions/cmp_p03_work.png,Yatay duzlemde kuvvet hareket dogrultusunda oldugundan W = F*x = 16*5 = 80 J olur.
+cmp_p04,fizik,elektrik devresi,orta,B,2 A,B,True,1.0,vision_llm,both,"Seri bagli direnclerden olusan devrede akim siddeti kactir?
 AJ1A B)2A C)3A D)4A E)6A
--",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_p04_circuit.png,Seri bagli 4 ohm ve 2 ohm direncin esdegeri 6 ohm'dur. I = V/R = 12/6 = 2 A.
-cmp_p05,fizik,optik - aynalar,orta,D,20 cm,unknown,False,0.0,none,both,"Duzlem aynanin onundeki cisim aynadan 20 cm uzaktadir.
+-",,,success,,False,data/comparison_questions/cmp_p04_circuit.png,Seri bagli 4 ohm ve 2 ohm direncin esdegeri 6 ohm'dur. I = V/R = 12/6 = 2 A.
+cmp_p05,fizik,optik - aynalar,orta,D,20 cm,D,True,1.0,both_agree,both,"Duzlem aynanin onundeki cisim aynadan 20 cm uzaktadir.
 Goruntunun aynaya uzakligi kac cm'dir?
-A)5 B)10 C)15 D)20 E)40 2",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_p05_mirror.png,Duzlem aynada goruntunun aynaya uzakligi cismin aynaya uzakligina esittir. Cisim aynadan 20 cm uzaktaysa goruntu de 20 cm uzaktadir.
-cmp_p06,fizik,dalga,orta,C,12 m/s,unknown,False,0.0,none,both,"Bir dalganin dalga boyu 3 m, frekansi 4 Hz'dir.
+A)5 B)10 C)15 D)20 E)40 2",,,success,,False,data/comparison_questions/cmp_p05_mirror.png,Duzlem aynada goruntunun aynaya uzakligi cismin aynaya uzakligina esittir. Cisim aynadan 20 cm uzaktaysa goruntu de 20 cm uzaktadir.
+cmp_p06,fizik,dalga,orta,C,12 m/s,C,True,1.0,both_agree,both,"Bir dalganin dalga boyu 3 m, frekansi 4 Hz'dir.
 Dalganin yayilma hizi kactir?
-A)7m/s B)Q9m/s C)12 m/s D)15m/s_ E)18 m/s",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_p06_wave.png,Dalga hizi v = lambda*f bagintisiyle bulunur. 3 m * 4 Hz = 12 m/s.
-cmp_p07,fizik,kaldırma kuvveti,orta,A,30 N,unknown,False,0.0,none,both,"Sivi icinde dengede yuzen cismin agirligi 30 N'dur.
+A)7m/s B)Q9m/s C)12 m/s D)15m/s_ E)18 m/s",,,success,,False,data/comparison_questions/cmp_p06_wave.png,Dalga hizi v = lambda*f bagintisiyle bulunur. 3 m * 4 Hz = 12 m/s.
+cmp_p07,fizik,kaldırma kuvveti,orta,A,30 N,A,True,1.0,vision_llm,both,"Sivi icinde dengede yuzen cismin agirligi 30 N'dur.
 Cisme etki eden kaldirma kuwveti kactir?
 A)30N B)20N C)15N D)10N E)5N
 ‘AF _k
-y, G=30 N",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_p07_buoyancy.png,"Cisim sivi icinde dengede yuzdugune gore kaldirma kuvveti cismin agirligina esittir, yani 30 N."
-cmp_p08,fizik,ısı ve sıcaklık,orta,E,4200 J,unknown,False,0.0,none,both,"100 g suyun sicakligi 20 C'den 30 C’'ye cikariliyor.
+y, G=30 N",,,success,,False,data/comparison_questions/cmp_p07_buoyancy.png,"Cisim sivi icinde dengede yuzdugune gore kaldirma kuvveti cismin agirligina esittir, yani 30 N."
+cmp_p08,fizik,ısı ve sıcaklık,orta,E,4200 J,E,True,0.9,both_agree,both,"100 g suyun sicakligi 20 C'den 30 C’'ye cikariliyor.
 c_su = 4200 J/(kg C) olduguna gore alinan isi kactir?
-A)420J B)840J ©C)2100J D)3000J £E)4200J",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_p08_heat.png,"Q = m*c*DeltaT. m=0,1 kg, c=4200 J/kg C ve DeltaT=10 C oldugundan Q=0,1*4200*10=4200 J."
-cmp_p09,fizik,momentum,orta,B,4 m/s,unknown,False,0.0,none,both,"2 kg kutleli cisim 6 m/s hizla durmakta olan 1 kg kutleli
+A)420J B)840J ©C)2100J D)3000J £E)4200J",,,success,,False,data/comparison_questions/cmp_p08_heat.png,"Q = m*c*DeltaT. m=0,1 kg, c=4200 J/kg C ve DeltaT=10 C oldugundan Q=0,1*4200*10=4200 J."
+cmp_p09,fizik,momentum,orta,B,4 m/s,B,True,1.0,both_agree,both,"2 kg kutleli cisim 6 m/s hizla durmakta olan 1 kg kutleli
 
 cisme carpip birlikte hareket ediyor.
 
 Ortak hiz kactir?
 
 A)3m/s B)4m/s C)5m/s D)6m/s_ E)8m/s
-2kg } > 1 kg",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_p09_momentum.png,Tam esnek olmayan carpisma sonrasi ortak hiz v = (m1*v1 + m2*v2)/(m1+m2) = (2*6 + 1*0)/3 = 4 m/s.
-cmp_p10,fizik,tork,orta,C,24 N.m,unknown,False,0.0,none,both,"Noktasi etrafinda donebilen cubuga sekildeki gibi dik 12 N
+2kg } > 1 kg",,,success,,False,data/comparison_questions/cmp_p09_momentum.png,Tam esnek olmayan carpisma sonrasi ortak hiz v = (m1*v1 + m2*v2)/(m1+m2) = (2*6 + 1*0)/3 = 4 m/s.
+cmp_p10,fizik,tork,orta,C,24 N.m,C,True,1.0,both_agree,both,"Noktasi etrafinda donebilen cubuga sekildeki gibi dik 12 N
 kuvvet uygulanir.
 Olusan tork kac N.m'dir?
 A) 12 B)18 C)24 D)30 £&)36
 [ N
-2m",,no_answer,success_with_no_reliable_answer,No reliable answer produced by either pipeline.,True,data/comparison_questions/cmp_p10_torque.png,Kuvvet cubuga dik uygulandigi icin tork = F*d = 12*2 = 24 N.m olur.
+2m",,,success,,False,data/comparison_questions/cmp_p10_torque.png,Kuvvet cubuga dik uygulandigi icin tork = F*d = 12*2 = 24 N.m olur.
