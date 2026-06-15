@@ -182,6 +182,27 @@ Bu değerler son proje durumu için seçilen temsilî çalıştırmadan alınmı
 
 Gerçek LLM provider modunda sonuçlar küçük farklılıklar gösterebilir. Modeller tamamen deterministik cevap üretmediği için bu değerler sabit akademik benchmark sonucu olarak değil, temsilî demo/evaluation çıktıları olarak okunmalıdır.
 
+### Model Comparison Benchmark
+
+GPT Web UI, Gemini Web UI, Claude Web UI ve yerel tool sonucunu karşılaştırmak için 20 soruluk YKS/TYT-AYT stili ek bir benchmark hazırlandı. Set 10 matematik ve 10 fizik sorusundan oluşur.
+
+Son karşılaştırma sonucu:
+
+| Sistem | Doğru | Başarı |
+| --- | ---: | ---: |
+| GPT Web UI | 20/20 | 100% |
+| Gemini Web UI | 19/20 | 95% |
+| Claude Web UI | 19/20 | 95% |
+| Local Tool | 17/20 | 85% |
+
+Sonuçlar şu dosyalarda tutulur:
+
+- `reports/model_comparison_template.csv`
+- `reports/comparison_tool_results.csv`
+- `reports/model_comparison_final_report.md`
+
+Bu karşılaştırma, model akıl yürütme hatalarını OCR/parsing kaynaklı hatalardan ayırmaya yardımcı olur.
+
 ## 10. Streamlit UI Testleri
 
 Streamlit arayüzünde manuel testler yapıldı. Arayüzde provider modu görünür hale getirildi. `.env` içinde `LLM_MOCK_MODE=false` olduğunda UI artık mock mode mesajı göstermiyor; gerçek provider modunda token kullanımına dikkat edilmesi gerektiğini belirtiyor ve model adını gösteriyor.
